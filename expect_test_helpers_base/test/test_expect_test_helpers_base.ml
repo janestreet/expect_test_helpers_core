@@ -15,24 +15,24 @@ let%expect_test "[print_s ~hide_positions:true]" =
   print_s ~hide_positions:true [%message [%here] [%here]];
   [%expect
     {|
-      (lib/expect_test_helpers/base/test/test.ml:LINE:COL
-       lib/expect_test_helpers/base/test/test.ml:LINE:COL) |}]
+      (lib/expect_test_helpers/base/test/test_expect_test_helpers_base.ml:LINE:COL
+       lib/expect_test_helpers/base/test/test_expect_test_helpers_base.ml:LINE:COL) |}]
 ;;
 
 let%expect_test "[print_string ~hide_positions:true]" =
   print_string ~hide_positions:true (Sexp.to_string_hum [%message [%here] [%here]]);
   [%expect
     {|
-      (lib/expect_test_helpers/base/test/test.ml:LINE:COL
-       lib/expect_test_helpers/base/test/test.ml:LINE:COL) |}]
+      (lib/expect_test_helpers/base/test/test_expect_test_helpers_base.ml:LINE:COL
+       lib/expect_test_helpers/base/test/test_expect_test_helpers_base.ml:LINE:COL) |}]
 ;;
 
 let%expect_test "[print_endline ~hide_positions:true]" =
   print_endline ~hide_positions:true (Sexp.to_string_hum [%message [%here] [%here]]);
   [%expect
     {|
-      (lib/expect_test_helpers/base/test/test.ml:LINE:COL
-       lib/expect_test_helpers/base/test/test.ml:LINE:COL) |}]
+      (lib/expect_test_helpers/base/test/test_expect_test_helpers_base.ml:LINE:COL
+       lib/expect_test_helpers/base/test/test_expect_test_helpers_base.ml:LINE:COL) |}]
 ;;
 
 let%expect_test "[~hide_positions:true] for line number from [%of_sexp]" =
@@ -41,7 +41,7 @@ let%expect_test "[~hide_positions:true] for line number from [%of_sexp]" =
     {|
     (raised (
       Of_sexp_error
-      "test.ml line LINE: (int * int)_of_sexp: tuple of size 2 expected"
+      "test_expect_test_helpers_base.ml line LINE: (int * int)_of_sexp: tuple of size 2 expected"
       (invalid_sexp ()))) |}]
 ;;
 
@@ -120,8 +120,10 @@ let%expect_test "[show_raise], no exception" =
 
 let%expect_test "[show_raise], raises hiding positions" =
   show_raise ~hide_positions:true (fun () -> raise_s [%message [%here]]);
-  [%expect {|
-    (raised lib/expect_test_helpers/base/test/test.ml:LINE:COL) |}]
+  [%expect
+    {|
+    (raised
+     lib/expect_test_helpers/base/test/test_expect_test_helpers_base.ml:LINE:COL) |}]
 ;;
 
 let%expect_test "[show_raise] with a deep stack" =
@@ -146,7 +148,7 @@ let%expect_test "[cr]" =
   print_cr [%here] [%message "some message"] ~cr:Comment;
   [%expect
     {|
-    (* require-failed: lib/expect_test_helpers/base/test/test.ml:LINE:COL. *)
+    (* require-failed: lib/expect_test_helpers/base/test/test_expect_test_helpers_base.ml:LINE:COL. *)
     "some message" |}]
 ;;
 
@@ -154,15 +156,15 @@ let%expect_test "[require] false respects [~cr] and default [~hide_positions]" =
   require [%here] false ~cr:Comment ~if_false_then_print_s:(lazy [%message [%here]]);
   [%expect
     {|
-    (* require-failed: lib/expect_test_helpers/base/test/test.ml:LINE:COL. *)
-    lib/expect_test_helpers/base/test/test.ml:LINE:COL |}]
+    (* require-failed: lib/expect_test_helpers/base/test/test_expect_test_helpers_base.ml:LINE:COL. *)
+    lib/expect_test_helpers/base/test/test_expect_test_helpers_base.ml:LINE:COL |}]
 ;;
 
 let%expect_test "[require false] on non-comment [~cr] values includes instructions" =
   require [%here] false ~cr:CR_someday ~if_false_then_print_s:(lazy [%message [%here]]);
   [%expect
     {|
-    lib/expect_test_helpers/base/test/test.ml:LINE:COL |}]
+    lib/expect_test_helpers/base/test/test_expect_test_helpers_base.ml:LINE:COL |}]
 ;;
 
 let%expect_test "[require_equal] success" =
@@ -174,7 +176,7 @@ let%expect_test "[require_equal] failure" =
   require_equal [%here] (module Int) ~cr:Comment 1 2;
   [%expect
     {|
-    (* require-failed: lib/expect_test_helpers/base/test/test.ml:LINE:COL. *)
+    (* require-failed: lib/expect_test_helpers/base/test/test_expect_test_helpers_base.ml:LINE:COL. *)
     ("values are not equal" 1 2) |}]
 ;;
 
@@ -182,7 +184,7 @@ let%expect_test "[require_equal] failure with [~message]" =
   require_equal [%here] (module Int) ~cr:Comment 1 2 ~message:"The sky is falling!";
   [%expect
     {|
-    (* require-failed: lib/expect_test_helpers/base/test/test.ml:LINE:COL. *)
+    (* require-failed: lib/expect_test_helpers/base/test/test_expect_test_helpers_base.ml:LINE:COL. *)
     ("The sky is falling!" 1 2) |}]
 ;;
 
@@ -196,7 +198,7 @@ let%expect_test "[require_equal] failure with [~if_false_then_print_s]" =
     ~if_false_then_print_s:(lazy [%message "The sky is falling!"]);
   [%expect
     {|
-    (* require-failed: lib/expect_test_helpers/base/test/test.ml:LINE:COL. *)
+    (* require-failed: lib/expect_test_helpers/base/test/test_expect_test_helpers_base.ml:LINE:COL. *)
     ("values are not equal" 1 2 "The sky is falling!") |}]
 ;;
 
@@ -209,7 +211,7 @@ let%expect_test "[require_compare_equal] failure" =
   require_compare_equal [%here] (module Int) ~cr:Comment 1 2;
   [%expect
     {|
-    (* require-failed: lib/expect_test_helpers/base/test/test.ml:LINE:COL. *)
+    (* require-failed: lib/expect_test_helpers/base/test/test_expect_test_helpers_base.ml:LINE:COL. *)
     ("values are not equal" 1 2) |}]
 ;;
 
@@ -223,7 +225,7 @@ let%expect_test "[require_compare_equal] failure with [~message]" =
     ~message:"The sky is falling!";
   [%expect
     {|
-    (* require-failed: lib/expect_test_helpers/base/test/test.ml:LINE:COL. *)
+    (* require-failed: lib/expect_test_helpers/base/test/test_expect_test_helpers_base.ml:LINE:COL. *)
     ("The sky is falling!" 1 2) |}]
 ;;
 
@@ -236,8 +238,9 @@ let%expect_test "[require_does_not_raise], raises hiding positions" =
   require_does_not_raise [%here] ~cr:Comment (fun () -> raise_s [%message [%here]]);
   [%expect
     {|
-    (* require-failed: lib/expect_test_helpers/base/test/test.ml:LINE:COL. *)
-    ("unexpectedly raised" lib/expect_test_helpers/base/test/test.ml:LINE:COL) |}]
+    (* require-failed: lib/expect_test_helpers/base/test/test_expect_test_helpers_base.ml:LINE:COL. *)
+    ("unexpectedly raised"
+     lib/expect_test_helpers/base/test/test_expect_test_helpers_base.ml:LINE:COL) |}]
 ;;
 
 let%expect_test "[require_does_not_raise] with a deep stack" =
@@ -245,7 +248,7 @@ let%expect_test "[require_does_not_raise] with a deep stack" =
   require_does_not_raise [%here] ~cr:Comment (fun () -> ignore (loop 13 : int));
   [%expect
     {|
-    (* require-failed: lib/expect_test_helpers/base/test/test.ml:LINE:COL. *)
+    (* require-failed: lib/expect_test_helpers/base/test/test_expect_test_helpers_base.ml:LINE:COL. *)
     ("unexpectedly raised" (Failure raising)) |}]
 ;;
 
@@ -253,7 +256,7 @@ let%expect_test "[require_does_raise] failure" =
   require_does_raise [%here] ~cr:Comment (fun () -> ());
   [%expect
     {|
-    (* require-failed: lib/expect_test_helpers/base/test/test.ml:LINE:COL. *)
+    (* require-failed: lib/expect_test_helpers/base/test/test_expect_test_helpers_base.ml:LINE:COL. *)
     "did not raise" |}]
 ;;
 
@@ -265,8 +268,9 @@ let%expect_test "[require_does_raise] success" =
 
 let%expect_test "[require_does_raise ~hide_positions:true] success" =
   require_does_raise [%here] ~hide_positions:true (fun () -> raise_s [%message [%here]]);
-  [%expect {|
-    lib/expect_test_helpers/base/test/test.ml:LINE:COL |}]
+  [%expect
+    {|
+    lib/expect_test_helpers/base/test/test_expect_test_helpers_base.ml:LINE:COL |}]
 ;;
 
 let%expect_test "[replace]" =
@@ -298,6 +302,78 @@ let%expect_test "hide_temp_files_in_string" =
   [%expect {| /usr/local/home/non-user.tmp.RANDOM/file.tmp.RANDOM.gz |}]
 ;;
 
+let%expect_test "[require_sets_are_equal] success" =
+  require_sets_are_equal
+    [%here]
+    (module Int)
+    (Set.empty (module Int))
+    (Set.empty (module Int));
+  [%expect {| |}];
+  require_sets_are_equal
+    [%here]
+    (module Int)
+    (Set.of_list (module Int) [ 1; 2; 3 ])
+    (Set.of_list (module Int) [ 3; 2; 1 ]);
+  [%expect {| |}]
+;;
+
+let%expect_test "[require_sets_are_equal] failure" =
+  require_sets_are_equal
+    [%here]
+    (module Int)
+    ~cr:Comment
+    (Set.of_list (module Int) [ 1; 2 ])
+    (Set.of_list (module Int) [ 2; 3 ]);
+  [%expect
+    {|
+    (* require-failed: lib/expect_test_helpers/base/test/test_expect_test_helpers_base.ml:LINE:COL. *)
+    ("sets are not equal"
+      ("in first but not in second" (1))
+      ("in second but not in first" (3))) |}]
+;;
+
+let%expect_test "[require_sets_are_equal] failure with extras only in first" =
+  require_sets_are_equal
+    [%here]
+    (module Int)
+    ~cr:Comment
+    (Set.of_list (module Int) [ 1; 2 ])
+    (Set.of_list (module Int) [ 2 ]);
+  [%expect
+    {|
+    (* require-failed: lib/expect_test_helpers/base/test/test_expect_test_helpers_base.ml:LINE:COL. *)
+    ("sets are not equal" ("in first but not in second" (1))) |}]
+;;
+
+let%expect_test "[require_sets_are_equal] failure with extras only in second" =
+  require_sets_are_equal
+    [%here]
+    (module Int)
+    ~cr:Comment
+    (Set.of_list (module Int) [ 2 ])
+    (Set.of_list (module Int) [ 2; 3 ]);
+  [%expect
+    {|
+    (* require-failed: lib/expect_test_helpers/base/test/test_expect_test_helpers_base.ml:LINE:COL. *)
+    ("sets are not equal" ("in second but not in first" (3))) |}]
+;;
+
+let%expect_test "[require_sets_are_equal] failure with names" =
+  require_sets_are_equal
+    [%here]
+    (module Int)
+    (Set.of_list (module Int) [ 1; 2 ])
+    (Set.of_list (module Int) [ 2; 3 ])
+    ~cr:Comment
+    ~names:("expected", "actual");
+  [%expect
+    {|
+    (* require-failed: lib/expect_test_helpers/base/test/test_expect_test_helpers_base.ml:LINE:COL. *)
+    ("sets are not equal"
+      ("in expected but not in actual" (1))
+      ("in actual but not in expected" (3))) |}]
+;;
+
 let%expect_test "[on_print_cr]" =
   let cr = CR.Comment in
   let hide_positions = true in
@@ -320,9 +396,9 @@ let%expect_test "[on_print_cr]" =
   run ();
   [%expect
     {|
-    (* require-failed: lib/expect_test_helpers/base/test/test.ml:LINE:COL. *)
+    (* require-failed: lib/expect_test_helpers/base/test/test_expect_test_helpers_base.ml:LINE:COL. *)
     "unconditional message"
-    (* require-failed: lib/expect_test_helpers/base/test/test.ml:LINE:COL. *)
+    (* require-failed: lib/expect_test_helpers/base/test/test_expect_test_helpers_base.ml:LINE:COL. *)
     "conditional message" |}];
   on_print_cr := ignore;
   run ();
@@ -331,17 +407,17 @@ let%expect_test "[on_print_cr]" =
   run ();
   [%expect
     {|
-    (* REQUIRE-FAILED: LIB/EXPECT_TEST_HELPERS/BASE/TEST/TEST.ML:LINE:COL. *)
+    (* REQUIRE-FAILED: LIB/EXPECT_TEST_HELPERS/BASE/TEST/TEST_EXPECT_TEST_HELPERS_BASE.ML:LINE:COL. *)
     "UNCONDITIONAL MESSAGE"
-    (* REQUIRE-FAILED: LIB/EXPECT_TEST_HELPERS/BASE/TEST/TEST.ML:LINE:COL. *)
+    (* REQUIRE-FAILED: LIB/EXPECT_TEST_HELPERS/BASE/TEST/TEST_EXPECT_TEST_HELPERS_BASE.ML:LINE:COL. *)
     "CONDITIONAL MESSAGE" |}];
   on_print_cr := default;
   run ();
   [%expect
     {|
-    (* require-failed: lib/expect_test_helpers/base/test/test.ml:LINE:COL. *)
+    (* require-failed: lib/expect_test_helpers/base/test/test_expect_test_helpers_base.ml:LINE:COL. *)
     "unconditional message"
-    (* require-failed: lib/expect_test_helpers/base/test/test.ml:LINE:COL. *)
+    (* require-failed: lib/expect_test_helpers/base/test/test_expect_test_helpers_base.ml:LINE:COL. *)
     "conditional message" |}]
 ;;
 
@@ -369,7 +445,7 @@ let%expect_test ("[quickcheck] failure"[@tags "64-bits-only"]) =
   [%expect
     {|
     ("quickcheck: test failed" (input -15508265059))
-    (* require-failed: lib/expect_test_helpers/base/test/test.ml:LINE:COL. *)
+    (* require-failed: lib/expect_test_helpers/base/test/test_expect_test_helpers_base.ml:LINE:COL. *)
     BAD |}]
 ;;
 
@@ -386,9 +462,9 @@ let%expect_test ("[quickcheck] failure with multiple CRs"[@tags "64-bits-only"])
   [%expect
     {|
     ("quickcheck: test failed" (input 76753))
-    (* require-failed: lib/expect_test_helpers/base/test/test.ml:LINE:COL. *)
+    (* require-failed: lib/expect_test_helpers/base/test/test_expect_test_helpers_base.ml:LINE:COL. *)
     first
-    (* require-failed: lib/expect_test_helpers/base/test/test.ml:LINE:COL. *)
+    (* require-failed: lib/expect_test_helpers/base/test/test_expect_test_helpers_base.ml:LINE:COL. *)
     second |}]
 ;;
 
@@ -404,7 +480,7 @@ let%expect_test ("[quickcheck] raised exception"[@tags "64-bits-only"]) =
   [%expect
     {|
     ("quickcheck: test failed" (input 76753))
-    (* require-failed: lib/expect_test_helpers/base/test/test.ml:LINE:COL. *)
+    (* require-failed: lib/expect_test_helpers/base/test/test_expect_test_helpers_base.ml:LINE:COL. *)
     ("unexpectedly raised" BAD) |}]
 ;;
 
@@ -425,6 +501,6 @@ let%expect_test ("[quickcheck] failure with shrinker"[@tags "64-bits-only"]) =
   [%expect
     {|
     ("quickcheck: test failed" (input 1))
-    (* require-failed: lib/expect_test_helpers/base/test/test.ml:LINE:COL. *)
+    (* require-failed: lib/expect_test_helpers/base/test/test_expect_test_helpers_base.ml:LINE:COL. *)
     (positive 1) |}]
 ;;

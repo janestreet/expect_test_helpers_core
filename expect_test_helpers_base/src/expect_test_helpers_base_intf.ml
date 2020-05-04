@@ -18,12 +18,10 @@ module Sexp_style = struct
   [@@deriving sexp_of]
 end
 
-module type Set = sig
+module type With_comparator = sig
   type t [@@deriving sexp_of]
 
-  val diff : t -> t -> t
-  val equal : t -> t -> bool
-  val is_empty : t -> bool
+  include Comparator.S with type t := t
 end
 
 module type With_compare = sig
@@ -42,7 +40,7 @@ module type Expect_test_helpers_base = sig
   (** Helpers for producing output inside [let%expect_test]. Designed for code using
       [Base]. See also [Expect_test_helpers_core] and [Expect_test_helpers_async]. *)
 
-  module type Set = Set
+  module type With_comparator = With_comparator
   module type With_compare = With_compare
   module type With_equal = With_equal
 
@@ -159,9 +157,9 @@ module type Expect_test_helpers_base = sig
     -> ?hide_positions:bool (** default is [false] when [cr=CR], [true] otherwise *)
     -> ?names:string * string (** default is ["first", "second"] *)
     -> Source_code_position.t
-    -> (module Set with type t = 'a)
-    -> 'a
-    -> 'a
+    -> (module With_comparator with type t = 'elt and type comparator_witness = 'cmp)
+    -> ('elt, 'cmp) Set.t
+    -> ('elt, 'cmp) Set.t
     -> unit
 
   (** [show_raise] calls [f ()] and prints the exception that it raises, or, if it doesn't

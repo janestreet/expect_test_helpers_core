@@ -207,12 +207,12 @@ let require_compare_equal
 ;;
 
 let require_sets_are_equal
-      (type a)
+      (type elt cmp)
       ?cr
       ?hide_positions
       ?(names = "first", "second")
       here
-      (module M : Set with type t = a)
+      (module Elt : With_comparator with type t = elt and type comparator_witness = cmp)
       first
       second
   =
@@ -220,16 +220,17 @@ let require_sets_are_equal
     ?cr
     ?hide_positions
     here
-    (M.equal first second)
+    (Set.equal first second)
     ~if_false_then_print_s:
       (lazy
         (let show_diff (name1, set1) (name2, set2) =
-           let diff = M.diff set1 set2 in
-           if M.is_empty diff
+           let diff = Set.diff set1 set2 in
+           if Set.is_empty diff
            then [%message]
            else
              [%message
-               (Printf.sprintf "in %s but not in %s" name1 name2) ~_:(diff : M.t)]
+               (Printf.sprintf "in %s but not in %s" name1 name2)
+                 ~_:(diff : Set.M(Elt).t)]
          in
          let first = fst names, first in
          let second = snd names, second in
