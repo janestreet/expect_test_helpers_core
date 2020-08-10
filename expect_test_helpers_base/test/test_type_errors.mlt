@@ -1,5 +1,4 @@
 open! Base
-
 open! Expect_test_helpers_base
 
 let () = require_equal [%here] ()

@@ -1,7 +1,5 @@
 open! Base
-
 open! Expect_test_helpers_core
-
 module Empty = struct end
 
 let () = print_and_check_stable_type [%here] ()

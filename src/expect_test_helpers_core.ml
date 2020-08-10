@@ -158,9 +158,7 @@ let require_allocation_does_not_exceed_private
       here
       f
   =
-  let ( x
-      , { Gc.For_testing.Allocation_report.major_words_allocated; minor_words_allocated }
-      )
+  let x, { Gc.For_testing.Allocation_report.major_words_allocated; minor_words_allocated }
     =
     Gc.For_testing.measure_allocation f
   in

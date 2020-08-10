@@ -229,8 +229,7 @@ let require_sets_are_equal
            then [%message]
            else
              [%message
-               (Printf.sprintf "in %s but not in %s" name1 name2)
-                 ~_:(diff : Set.M(Elt).t)]
+               (Printf.sprintf "in %s but not in %s" name1 name2) ~_:(diff : Set.M(Elt).t)]
          in
          let first = fst names, first in
          let second = snd names, second in
