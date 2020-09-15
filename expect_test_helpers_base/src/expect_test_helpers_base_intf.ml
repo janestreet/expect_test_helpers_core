@@ -198,6 +198,103 @@ module type Expect_test_helpers_base = sig
     -> (unit -> _)
     -> unit
 
+  (** [require_some here option] is like [require here (is_some option)], with improved
+      output.  If [option = None], it prints a CR.  If [option = Some some] and
+      [~print_some] is provided, it prints [print_some some]. *)
+  val require_some
+    :  ?cr:CR.t (** default is [CR] *)
+    -> ?hide_positions:bool (** default is [false] when [cr=CR], [true] otherwise *)
+    -> ?print_some:('some -> Sexp.t)
+    -> Source_code_position.t
+    -> 'some option
+    -> unit
+
+  (** [require_none here sexp_of_some option] is like [require here (is_none option)],
+      with improved output.  If [option = Some some], it prints a CR including
+      [sexp_of_some some].  If [option = None], it does not print. *)
+  val require_none
+    :  ?cr:CR.t (** default is [CR] *)
+    -> ?hide_positions:bool (** default is [false] when [cr=CR], [true] otherwise *)
+    -> Source_code_position.t
+    -> ('some -> Sexp.t)
+    -> 'some option
+    -> unit
+
+  (** [require_ok here or_error] is like [require here (is_ok or_error)], with improved
+      output.  If [or_error = Error error], it prints a CR including [error].  If
+      [or_error = Ok ok] and [~print_ok] is provided, it prints [print_ok ok]. *)
+  val require_ok
+    :  ?cr:CR.t (** default is [CR] *)
+    -> ?hide_positions:bool (** default is [false] when [cr=CR], [true] otherwise *)
+    -> ?print_ok:('ok -> Sexp.t)
+    -> Source_code_position.t
+    -> 'ok Or_error.t
+    -> unit
+
+  (** [require_error here sexp_of_ok or_error] is like [require here (is_error or_error)],
+      with improved output.  If [or_error = Ok ok], it prints a CR including [sexp_of_ok
+      ok].  If [or_error = Error error] and [print_error = true], it prints [error]. *)
+  val require_error
+    :  ?cr:CR.t (** default is [CR] *)
+    -> ?hide_positions:bool (** default is [false] when [cr=CR], [true] otherwise *)
+    -> ?print_error:bool (** default is [false] *)
+    -> Source_code_position.t
+    -> ('ok -> Sexp.t)
+    -> 'ok Or_error.t
+    -> unit
+
+  (** [require_ok_result here sexp_of_error result] is like [require here (is_ok
+      or_error)], with improved output.  If [result = Error error], it prints a CR
+      including [sexp_of_error error].  If [result = Ok ok] and [~print_ok] is provided,
+      it prints [print_ok ok]. *)
+  val require_ok_result
+    :  ?cr:CR.t (** default is [CR] *)
+    -> ?hide_positions:bool (** default is [false] when [cr=CR], [true] otherwise *)
+    -> ?print_ok:('ok -> Sexp.t)
+    -> Source_code_position.t
+    -> ('error -> Sexp.t)
+    -> ('ok, 'error) Result.t
+    -> unit
+
+  (** [require_error_result here sexp_of_ok result] is like [require here (is_error
+      result)], with improved output.  If [result = Ok ok], it prints a CR including
+      [sexp_of_ok ok].  If [result = Error error] and [~print_error] is supplied, it
+      prints [print_error error]. *)
+  val require_error_result
+    :  ?cr:CR.t (** default is [CR] *)
+    -> ?hide_positions:bool (** default is [false] when [cr=CR], [true] otherwise *)
+    -> ?print_error:('error -> Sexp.t)
+    -> Source_code_position.t
+    -> ('ok -> Sexp.t)
+    -> ('ok, 'error) Result.t
+    -> unit
+
+  (** [require_first here print_second either] is like [require here (is_first either)],
+      with improved output.  If [either = Second second], it prints a CR including
+      [sexp_of_second second].  If [either = First first] and [~print_first] is provided,
+      it prints [print_first first]. *)
+  val require_first
+    :  ?cr:CR.t (** default is [CR] *)
+    -> ?hide_positions:bool (** default is [false] when [cr=CR], [true otherwise] *)
+    -> ?print_first:('first -> Sexp.t)
+    -> Source_code_position.t
+    -> ('second -> Sexp.t)
+    -> ('first, 'second) Either.t
+    -> unit
+
+  (** [require_second here sexp_of_first either] is like [require here (is_second
+      either)], with improved output.  If [either = First first], it prints a CR including
+      [sexp_of_first first].  If [either = Second second] and [~print_second] is provided,
+      it prints [print_second second]. *)
+  val require_second
+    :  ?cr:CR.t (** default is [CR] *)
+    -> ?hide_positions:bool (** default is [false] when [cr=CR], [true otherwise] *)
+    -> ?print_second:('second -> Sexp.t)
+    -> Source_code_position.t
+    -> ('first -> Sexp.t)
+    -> ('first, 'second) Either.t
+    -> unit
+
 
   (** [quickcheck] is similar to [Base_quickcheck.Test.run]. It stops after the first
       iteration that raises or prints a CR, as detected by [on_print_cr]. *)

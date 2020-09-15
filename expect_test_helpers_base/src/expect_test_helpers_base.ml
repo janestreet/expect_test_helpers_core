@@ -272,6 +272,98 @@ let require_does_raise ?cr ?hide_positions ?show_backtrace here f =
   | Did_not_raise -> print_cr ?cr ?hide_positions here [%message "did not raise"]
 ;;
 
+let require_first_gen
+      (type first second)
+      ?cr
+      ?hide_positions
+      ?(print_first : (first -> Sexp.t) option)
+      ~message
+      here
+      (sexp_of_second : second -> Sexp.t)
+      (either : (first, second) Either.t)
+  =
+  match either with
+  | First first ->
+    (match print_first with
+     | None -> ()
+     | Some sexp_of_first -> print_s [%sexp (first : first)])
+  | Second second ->
+    print_cr ?cr ?hide_positions here [%message message ~_:(second : second)]
+;;
+
+let require_first = require_first_gen ~message:"unexpected [Second]"
+
+let require_second ?cr ?hide_positions ?print_second here print_first either =
+  require_first_gen
+    ?cr
+    ?hide_positions
+    ?print_first:print_second
+    ~message:"unexpected [First]"
+    here
+    print_first
+    (Either.swap either)
+;;
+
+let require_some ?cr ?hide_positions ?print_some here option =
+  require_first_gen
+    ?cr
+    ~message:"unexpected [None]"
+    ?hide_positions
+    ?print_first:print_some
+    here
+    [%sexp_of: unit]
+    (match option with
+     | Some some -> First some
+     | None -> Second ())
+;;
+
+let require_none ?cr ?hide_positions here sexp_of_some option =
+  require_first_gen
+    ?cr
+    ~message:"unexpected [Some]"
+    ?hide_positions
+    here
+    sexp_of_some
+    (match option with
+     | None -> First ()
+     | Some some -> Second some)
+;;
+
+let require_ok_result ?cr ?hide_positions ?print_ok here sexp_of_error result =
+  require_first_gen
+    ?cr
+    ~message:"unexpected [Error]"
+    ?hide_positions
+    ?print_first:print_ok
+    here
+    sexp_of_error
+    (match result with
+     | Ok ok -> First ok
+     | Error error -> Second error)
+;;
+
+let require_error_result ?cr ?hide_positions ?print_error here sexp_of_ok result =
+  require_first_gen
+    ?cr
+    ~message:"unexpected [Ok]"
+    ?hide_positions
+    ?print_first:print_error
+    here
+    sexp_of_ok
+    (match result with
+     | Error error -> First error
+     | Ok ok -> Second ok)
+;;
+
+let require_ok ?cr ?hide_positions ?print_ok here res =
+  require_ok_result ?cr ?hide_positions ?print_ok here [%sexp_of: Error.t] res
+;;
+
+let require_error ?cr ?hide_positions ?(print_error = false) here sexp_of_ok res =
+  let print_error = Option.some_if print_error [%sexp_of: Error.t] in
+  require_error_result ?cr ?hide_positions ?print_error here sexp_of_ok res
+;;
+
 let show_raise (type a) ?hide_positions ?show_backtrace (f : unit -> a) =
   print_s
     ?hide_positions

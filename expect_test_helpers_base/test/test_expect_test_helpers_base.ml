@@ -273,6 +273,127 @@ let%expect_test "[require_does_raise ~hide_positions:true] success" =
     lib/expect_test_helpers/base/test/test_expect_test_helpers_base.ml:LINE:COL |}]
 ;;
 
+include struct
+  open struct
+    let sexp_const s () = [%message s]
+    let print_error = sexp_const "error"
+    let print_first = sexp_const "first"
+    let print_ok = sexp_const "ok"
+    let print_second = sexp_const "second"
+    let print_some = sexp_const "some"
+  end
+
+  let%expect_test "[require_some]" =
+    require_some [%here] (Some ());
+    [%expect {| |}];
+    require_some [%here] (Some ()) ~print_some;
+    [%expect {| some |}];
+    require_some [%here] ~cr:Comment None;
+    (* It's silly to print the [None], but it doesn't seem worth special-casing. *)
+    [%expect
+      {|
+    (* require-failed: lib/expect_test_helpers/base/test/test_expect_test_helpers_base.ml:LINE:COL. *)
+    ("unexpected [None]" ()) |}]
+  ;;
+
+  let%expect_test "[require_none]" =
+    require_none [%here] [%sexp_of: _] None;
+    [%expect {| |}];
+    require_none [%here] print_some ~cr:Comment (Some ());
+    [%expect
+      {|
+    (* require-failed: lib/expect_test_helpers/base/test/test_expect_test_helpers_base.ml:LINE:COL. *)
+    ("unexpected [Some]" some) |}]
+  ;;
+
+  let%expect_test "[require_first]" =
+    require_first [%here] [%sexp_of: _] (First ());
+    [%expect {| |}];
+    require_first [%here] [%sexp_of: _] ~print_first (First ());
+    [%expect {| first |}];
+    require_first [%here] print_second ~cr:Comment (Second ());
+    [%expect
+      {|
+    (* require-failed: lib/expect_test_helpers/base/test/test_expect_test_helpers_base.ml:LINE:COL. *)
+    ("unexpected [Second]" second) |}]
+  ;;
+
+  let%expect_test "[require_second]" =
+    require_second [%here] print_first (Second ());
+    [%expect {| |}];
+    require_second [%here] print_first (Second ()) ~print_second;
+    [%expect {| second |}];
+    require_second [%here] ~cr:Comment print_first (First ());
+    [%expect
+      {|
+    (* require-failed: lib/expect_test_helpers/base/test/test_expect_test_helpers_base.ml:LINE:COL. *)
+    ("unexpected [First]" first) |}];
+    require_second [%here] ~cr:Comment print_first (First ()) ~print_second;
+    [%expect
+      {|
+    (* require-failed: lib/expect_test_helpers/base/test/test_expect_test_helpers_base.ml:LINE:COL. *)
+    ("unexpected [First]" first) |}]
+  ;;
+
+  let%expect_test "[require_ok_result]" =
+    require_ok_result [%here] print_error (Ok ());
+    [%expect {| |}];
+    require_ok_result [%here] print_error (Ok ()) ~print_ok;
+    [%expect {| ok |}];
+    require_ok_result [%here] ~cr:Comment print_error (Error ());
+    [%expect
+      {|
+    (* require-failed: lib/expect_test_helpers/base/test/test_expect_test_helpers_base.ml:LINE:COL. *)
+    ("unexpected [Error]" error) |}];
+    require_ok_result [%here] ~cr:Comment print_error (Error ()) ~print_ok;
+    [%expect
+      {|
+    (* require-failed: lib/expect_test_helpers/base/test/test_expect_test_helpers_base.ml:LINE:COL. *)
+    ("unexpected [Error]" error) |}]
+  ;;
+
+  let%expect_test "[require_error_result]" =
+    require_error_result [%here] print_ok (Error ());
+    [%expect {| |}];
+    require_error_result [%here] print_ok (Error ()) ~print_error;
+    [%expect {| error |}];
+    require_error_result [%here] ~cr:Comment print_ok (Ok ());
+    [%expect
+      {|
+    (* require-failed: lib/expect_test_helpers/base/test/test_expect_test_helpers_base.ml:LINE:COL. *)
+    ("unexpected [Ok]" ok) |}];
+    require_error_result [%here] ~cr:Comment print_ok (Ok ()) ~print_error;
+    [%expect
+      {|
+    (* require-failed: lib/expect_test_helpers/base/test/test_expect_test_helpers_base.ml:LINE:COL. *)
+    ("unexpected [Ok]" ok) |}]
+  ;;
+
+  let%expect_test "[require_ok]" =
+    require_ok [%here] (Ok ());
+    [%expect {| |}];
+    require_ok [%here] (Ok ()) ~print_ok;
+    [%expect {| ok |}];
+    require_ok [%here] ~cr:Comment (Or_error.error_string "arstneio");
+    [%expect
+      {|
+    (* require-failed: lib/expect_test_helpers/base/test/test_expect_test_helpers_base.ml:LINE:COL. *)
+    ("unexpected [Error]" arstneio) |}]
+  ;;
+
+  let%expect_test "[require_error]" =
+    require_error [%here] print_ok (Or_error.error_string "arstneio");
+    [%expect {| |}];
+    require_error [%here] print_ok (Or_error.error_string "arstneio") ~print_error:true;
+    [%expect {| arstneio |}];
+    require_error [%here] ~cr:Comment print_ok (Ok ());
+    [%expect
+      {|
+    (* require-failed: lib/expect_test_helpers/base/test/test_expect_test_helpers_base.ml:LINE:COL. *)
+    ("unexpected [Ok]" ok) |}]
+  ;;
+end
+
 let%expect_test "[replace]" =
   "/tmp/dir.tmp.123456/file.txt copied from /jenga/root/app/foo/file.txt"
   |> replace ~pattern:"/tmp/dir.tmp.123456" ~with_:"$TMP"
