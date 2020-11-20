@@ -625,3 +625,92 @@ let%expect_test ("[quickcheck] failure with shrinker"[@tags "64-bits-only"]) =
     (* require-failed: lib/expect_test_helpers/base/test/test_expect_test_helpers_base.ml:LINE:COL. *)
     (positive 1) |}]
 ;;
+
+module Int_for_quickcheck = struct
+  open Base_quickcheck.Export
+
+  type t = int [@@deriving quickcheck, sexp_of]
+end
+
+let%expect_test "[quickcheck_m] success" =
+  quickcheck_m [%here] (module Int_for_quickcheck) ~f:ignore;
+  [%expect {||}]
+;;
+
+(* Quickcheck pseudo-random generation is different on 32-bit and 64-bit, so we only run
+   Quickcheck failure tests on 64-bit builds. *)
+
+let%expect_test ("[quickcheck_m] failure"[@tags "64-bits-only"]) =
+  let cr = CR.Comment in
+  quickcheck_m
+    [%here]
+    ~cr
+    (module Int_for_quickcheck)
+    ~f:(fun int ->
+      require [%here] ~cr (int > 100) ~if_false_then_print_s:(lazy [%message "BAD"]));
+  [%expect
+    {|
+    ("quickcheck: test failed" (input -15508265059))
+    (* require-failed: lib/expect_test_helpers/base/test/test_expect_test_helpers_base.ml:LINE:COL. *)
+    BAD |}]
+;;
+
+let%expect_test ("[quickcheck_m] failure with multiple CRs"[@tags "64-bits-only"]) =
+  let cr = CR.Comment in
+  quickcheck_m
+    [%here]
+    ~cr
+    (module Int_for_quickcheck)
+    ~f:(fun _ ->
+      print_cr [%here] ~cr [%message "first"];
+      require [%here] ~cr false ~if_false_then_print_s:(lazy [%message "second"]));
+  [%expect
+    {|
+    ("quickcheck: test failed" (input 76753))
+    (* require-failed: lib/expect_test_helpers/base/test/test_expect_test_helpers_base.ml:LINE:COL. *)
+    first
+    (* require-failed: lib/expect_test_helpers/base/test/test_expect_test_helpers_base.ml:LINE:COL. *)
+    second |}]
+;;
+
+let%expect_test ("[quickcheck_m] raised exception"[@tags "64-bits-only"]) =
+  let cr = CR.Comment in
+  require_does_not_raise [%here] (fun () ->
+    quickcheck_m
+      [%here]
+      ~cr
+      (module Int_for_quickcheck)
+      ~f:(fun int -> if int > 100 then raise_s [%message "BAD"]));
+  [%expect
+    {|
+    ("quickcheck: test failed" (input 76753))
+    (* require-failed: lib/expect_test_helpers/base/test/test_expect_test_helpers_base.ml:LINE:COL. *)
+    ("unexpectedly raised" BAD) |}]
+;;
+
+let%expect_test ("[quickcheck_m] failure with shrinker"[@tags "64-bits-only"]) =
+  let cr = CR.Comment in
+  quickcheck_m
+    [%here]
+    ~cr
+    (module struct
+      type t = int [@@deriving sexp_of]
+
+      let quickcheck_generator = Base_quickcheck.Generator.return 10
+
+      let quickcheck_shrinker =
+        Base_quickcheck.Shrinker.create (fun int -> Sequence.singleton (int - 1))
+      ;;
+    end)
+    ~f:(fun int ->
+      require
+        [%here]
+        ~cr
+        (int <= 0)
+        ~if_false_then_print_s:(lazy [%message "positive" ~_:(int : int)]));
+  [%expect
+    {|
+    ("quickcheck: test failed" (input 1))
+    (* require-failed: lib/expect_test_helpers/base/test/test_expect_test_helpers_base.ml:LINE:COL. *)
+    (positive 1) |}]
+;;

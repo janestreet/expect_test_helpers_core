@@ -372,6 +372,32 @@ let show_raise (type a) ?hide_positions ?show_backtrace (f : unit -> a) =
      | Raised message -> message)
 ;;
 
+let quickcheck_m
+      (type a)
+      here
+      ?config
+      ?cr
+      ?examples
+      ?hide_positions
+      (module M : Base_quickcheck.Test.S with type t = a)
+      ~f
+  =
+  Base_quickcheck.Test.result
+    ?config
+    ?examples
+    (module M)
+    ~f:(fun elt ->
+      let crs = Queue.create () in
+      (* We set [on_print_cr] to accumulate CRs in [crs]; it affects both [f elt] as
+         well as our call to [require_does_not_raise]. *)
+      Ref.set_temporarily on_print_cr (Queue.enqueue crs) ~f:(fun () ->
+        require_does_not_raise here ?cr ?hide_positions (fun () -> f elt));
+      if Queue.is_empty crs then Ok () else Error (Queue.to_list crs))
+  |> Result.iter_error ~f:(fun (input, output) ->
+    print_s [%message "quickcheck: test failed" (input : M.t)];
+    List.iter output ~f:print_endline)
+;;
+
 let quickcheck
       (type a)
       here
@@ -387,27 +413,18 @@ let quickcheck
       ~f
       quickcheck_generator
   =
-  match
-    Base_quickcheck.Test.result
-      ~config:{ seed; test_count = trials; shrink_count = shrink_attempts; sizes }
-      ?examples
-      (module struct
-        type t = a
+  quickcheck_m
+    here
+    ~config:{ seed; test_count = trials; shrink_count = shrink_attempts; sizes }
+    ?cr
+    ?examples
+    ?hide_positions
+    (module struct
+      type t = a
 
-        let sexp_of_t = sexp_of
-        let quickcheck_generator = quickcheck_generator
-        let quickcheck_shrinker = shrinker
-      end)
-      ~f:(fun elt ->
-        let crs = Queue.create () in
-        (* We set [on_print_cr] to accumulate CRs in [crs]; it affects both [f elt] as
-           well as our call to [require_does_not_raise]. *)
-        Ref.set_temporarily on_print_cr (Queue.enqueue crs) ~f:(fun () ->
-          require_does_not_raise here ?cr ?hide_positions (fun () -> f elt));
-        if Queue.is_empty crs then Ok () else Error (Queue.to_list crs))
-  with
-  | Ok () -> ()
-  | Error (input, output) ->
-    print_s [%message "quickcheck: test failed" ~input:(sexp_of input : Sexp.t)];
-    List.iter output ~f:print_endline
+      let sexp_of_t = sexp_of
+      let quickcheck_generator = quickcheck_generator
+      let quickcheck_shrinker = shrinker
+    end)
+    ~f
 ;;

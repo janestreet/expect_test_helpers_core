@@ -296,8 +296,13 @@ module type Expect_test_helpers_base = sig
     -> unit
 
 
-  (** [quickcheck] is similar to [Base_quickcheck.Test.run]. It stops after the first
-      iteration that raises or prints a CR, as detected by [on_print_cr]. *)
+  (** [quickcheck] is similar to [Base_quickcheck.Test.run], but
+
+      1. [quickcheck] takes separate arguments for the values which
+      [Base_quickcheck.Test.run] takes in a first-class module.
+
+      2. [quickcheck] stops after the first iteration that raises or prints a CR, as
+      detected by [on_print_cr]. *)
   val quickcheck
     :  Source_code_position.t
     -> ?cr:CR.t (** default is [CR] *)
@@ -311,6 +316,19 @@ module type Expect_test_helpers_base = sig
     -> sexp_of:('a -> Sexp.t)
     -> f:('a -> unit)
     -> 'a Quickcheck.Generator.t
+    -> unit
+
+  (** [quickcheck_m] is similar to [Base_quickcheck.Test.run]. It stops after the first
+      iteration that raises or prints a CR, as detected by [on_print_cr]. *)
+  val quickcheck_m
+    :  Source_code_position.t
+    -> ?config:Base_quickcheck.Test.Config.t
+    (** default is [Base_quickcheck.Test.default_config] *)
+    -> ?cr:CR.t (** default is [CR] *)
+    -> ?examples:'a list
+    -> ?hide_positions:bool (** default is [false] when [cr=CR], [true] otherwise *)
+    -> (module Base_quickcheck.Test.S with type t = 'a)
+    -> f:('a -> unit)
     -> unit
 
   (** [sexp_style] determines the sexp format used by [sexp_to_string], [print_s], and
