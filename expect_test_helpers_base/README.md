@@ -1,6 +1,3 @@
----
-uuid: d9ad7e32-0415-331b-c8c3-bc23b809ca44
----
 September 2018
 
 `Expect_test_helpers_base` is a library intended for use with expect

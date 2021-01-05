@@ -158,9 +158,11 @@ let require_allocation_does_not_exceed_private
       here
       f
   =
-  let x, { Gc.For_testing.Allocation_report.major_words_allocated; minor_words_allocated }
+  let ( x
+      , { Gc.For_testing.Allocation_report.major_words_allocated; minor_words_allocated }
+      , allocs )
     =
-    Gc.For_testing.measure_allocation f
+    Gc.For_testing.measure_and_log_allocation f
   in
   require
     here
@@ -180,6 +182,14 @@ let require_allocation_does_not_exceed_private
            then Some minor_words_allocated, Some major_words_allocated
            else Some minor_words_allocated, None
          in
+         if not (CR.hide_unstable_output cr)
+         then
+           List.iter allocs ~f:(fun { size_in_words; is_major; backtrace } ->
+             Printf.printf
+               "Allocation of %d %s words occurred at:\n%s\n"
+               size_in_words
+               (if is_major then "major" else "minor")
+               backtrace);
          [%message
            "allocation exceeded limit"
              (allocation_limit : Allocation_limit.t)
