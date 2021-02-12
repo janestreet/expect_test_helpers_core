@@ -29,7 +29,8 @@ let%expect_test "[print_and_check_stable_type] with broken round-trip" =
     let to_serializeable t = Int.to_string_hum t
     let of_serializeable _ = 42
 
-    include Sexpable.Of_sexpable
+    include
+      Sexpable.Of_sexpable
         (String)
         (struct
           type t = int
@@ -38,7 +39,8 @@ let%expect_test "[print_and_check_stable_type] with broken round-trip" =
           let of_sexpable = of_serializeable
         end)
 
-    include Binable.Of_binable_without_uuid [@alert "-legacy"]
+    include
+      Binable.Of_binable_without_uuid [@alert "-legacy"]
         (String)
         (struct
           type t = int

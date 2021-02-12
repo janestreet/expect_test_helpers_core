@@ -177,8 +177,9 @@ let require_allocation_does_not_exceed_private
         (let minor_words_allocated, major_words_allocated =
            if CR.hide_unstable_output cr
            then None, None
-           else if major_words_allocated > 0
-                || Allocation_limit.show_major_words allocation_limit
+           else if
+             major_words_allocated > 0
+             || Allocation_limit.show_major_words allocation_limit
            then Some minor_words_allocated, Some major_words_allocated
            else Some minor_words_allocated, None
          in
