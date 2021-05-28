@@ -63,6 +63,15 @@ module Sexp_style = struct
   ;;
 end
 
+module Phys_equal (M : sig
+    type t [@@deriving sexp_of]
+  end) =
+struct
+  type t = M.t [@@deriving sexp_of]
+
+  let equal = phys_equal
+end
+
 let hide_temp_files_in_string =
   let re = lazy (Re.compile (Re.seq [ Re.str ".tmp."; Re.repn Re.alnum 6 (Some 6) ])) in
   fun string -> Re.replace_string (force re) ~by:".tmp.RANDOM" string

@@ -714,3 +714,21 @@ let%expect_test ("[quickcheck_m] failure with shrinker"[@tags "64-bits-only"]) =
     (* require-failed: lib/expect_test_helpers/base/test/test_expect_test_helpers_base.ml:LINE:COL. *)
     (positive 1) |}]
 ;;
+
+let%expect_test "Phys_equal" =
+  require_equal [%here] (module Phys_equal (Int)) 1 1;
+  require_equal
+    [%here]
+    ~cr:Comment
+    (module Phys_equal (struct
+         type t = string option [@@deriving sexp_of]
+       end))
+    (Some "foo")
+    (Some ("fo" ^ "o"));
+  [%expect
+    {|
+    (* require-failed: lib/expect_test_helpers/base/test/test_expect_test_helpers_base.ml:LINE:COL. *)
+    ("values are not equal"
+      (foo)
+      (foo)) |}]
+;;
