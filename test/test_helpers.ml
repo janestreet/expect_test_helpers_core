@@ -1,4 +1,4 @@
-open! Core_kernel
+open! Core
 open! Import
 
 let%expect_test "[print_and_check_stable_type] shows [Shape.Digest] even for empty \

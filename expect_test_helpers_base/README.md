@@ -8,6 +8,5 @@ include: `print_s`, `require`, and `show_raise`.
 
 `Expect_test_helpers_base` depends on `Base` and does not use Unix or
 Async. It is suitable for use in JavaScript. Also see the
-`Expect_test_helpers_kernel` library, which extends
-`Expect_test_helpers_base` with functionality relevant to
-`Core_kernel`.
+`Expect_test_helpers_core` library, which extends
+`Expect_test_helpers_base` with functionality relevant to `Core`.

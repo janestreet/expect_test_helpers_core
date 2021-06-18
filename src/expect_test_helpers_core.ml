@@ -1,4 +1,4 @@
-open! Core_kernel
+open! Core
 include Expect_test_helpers_base
 include Expect_test_helpers_core_intf
 

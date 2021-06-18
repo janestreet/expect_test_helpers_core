@@ -8,7 +8,7 @@ let () = print_and_check_stable_type [%here] ()
   {|
 Line _, characters _-_:
 Error: This expression has type unit but an expression was expected of type
-         (module Core_kernel.Stable_without_comparator with type t = 'a)
+         (module Core.Stable_without_comparator with type t = 'a)
 |}]
 
 let () = print_and_check_stable_int63able_type [%here] ()
@@ -17,7 +17,7 @@ let () = print_and_check_stable_int63able_type [%here] ()
   {|
 Line _, characters _-_:
 Error: This expression has type unit but an expression was expected of type
-         (module Core_kernel.Stable_int63able with type t = 'a)
+         (module Core.Stable_int63able with type t = 'a)
 |}]
 
 let () = print_and_check_container_sexps [%here] ()

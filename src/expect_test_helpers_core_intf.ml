@@ -1,4 +1,4 @@
-open! Core_kernel
+open! Core
 
 module Allocation_limit = struct
   type t =
@@ -66,8 +66,7 @@ end
 
 module type Expect_test_helpers_core = sig
   (** Helpers for producing output inside [let%expect_test]. Designed for code using
-      [Core_kernel]. See also [Expect_test_helpers_base] and [Expect_test_helpers_async].
-  *)
+      [Core]. See also [Expect_test_helpers_base] and [Expect_test_helpers_async]. *)
 
   include module type of struct
     include Expect_test_helpers_base
