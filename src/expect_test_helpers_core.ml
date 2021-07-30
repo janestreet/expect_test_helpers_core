@@ -301,6 +301,6 @@ let print_and_check_container_sexps (type a) ?cr ?hide_positions here m list =
   print_and_check_hashable_sexps ?cr ?hide_positions here (module M) list
 ;;
 
-module Expect_test_helpers_kernel_private = struct
+module Expect_test_helpers_core_private = struct
   let require_allocation_does_not_exceed = require_allocation_does_not_exceed_private
 end

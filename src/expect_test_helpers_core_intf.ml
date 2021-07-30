@@ -185,11 +185,11 @@ module type Expect_test_helpers_core = sig
 
   (**/**)
 
-  (** This module is called [Expect_test_helpers_kernel_private] rather than [Private]
+  (** This module is called [Expect_test_helpers_core_private] rather than [Private]
       because [include Expect_test_helpers_core] is a common idiom, and we don't want to
       interfere with other [Private] modules or create problems due to multiple
       definitions of [Private]. *)
-  module Expect_test_helpers_kernel_private : sig
+  module Expect_test_helpers_core_private : sig
     val require_allocation_does_not_exceed
       :  ?cr:CR.t
       -> ?hide_positions:bool

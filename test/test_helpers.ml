@@ -133,7 +133,7 @@ let%expect_test ("[require_no_allocation] shows breach and expected, but does no
                   allocation"[@tags "no-js"])
   =
   ignore
-    (Expect_test_helpers_kernel_private.require_allocation_does_not_exceed
+    (Expect_test_helpers_core_private.require_allocation_does_not_exceed
        ~cr:Comment
        (Minor_words 0)
        [%here]
@@ -149,7 +149,7 @@ let%expect_test ("[require_allocation_does_not_exceed] shows breach but not allo
                    "no-js"])
   =
   ignore
-    (Expect_test_helpers_kernel_private.require_allocation_does_not_exceed
+    (Expect_test_helpers_core_private.require_allocation_does_not_exceed
        ~cr:Comment
        (Minor_words 1)
        [%here]
