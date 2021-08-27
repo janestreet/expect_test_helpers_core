@@ -554,7 +554,7 @@ let%expect_test "[quickcheck] success" =
 (* Quickcheck pseudo-random generation is different on 32-bit and 64-bit, so we only run
    Quickcheck failure tests on 64-bit builds. *)
 
-let%expect_test ("[quickcheck] failure"[@tags "64-bits-only"]) =
+let%expect_test ("[quickcheck] failure" [@tags "64-bits-only"]) =
   let cr = CR.Comment in
   quickcheck
     [%here]
@@ -570,7 +570,7 @@ let%expect_test ("[quickcheck] failure"[@tags "64-bits-only"]) =
     BAD |}]
 ;;
 
-let%expect_test ("[quickcheck] failure with multiple CRs"[@tags "64-bits-only"]) =
+let%expect_test ("[quickcheck] failure with multiple CRs" [@tags "64-bits-only"]) =
   let cr = CR.Comment in
   quickcheck
     [%here]
@@ -589,7 +589,7 @@ let%expect_test ("[quickcheck] failure with multiple CRs"[@tags "64-bits-only"])
     second |}]
 ;;
 
-let%expect_test ("[quickcheck] raised exception"[@tags "64-bits-only"]) =
+let%expect_test ("[quickcheck] raised exception" [@tags "64-bits-only"]) =
   let cr = CR.Comment in
   require_does_not_raise [%here] (fun () ->
     quickcheck
@@ -605,7 +605,7 @@ let%expect_test ("[quickcheck] raised exception"[@tags "64-bits-only"]) =
     ("unexpectedly raised" BAD) |}]
 ;;
 
-let%expect_test ("[quickcheck] failure with shrinker"[@tags "64-bits-only"]) =
+let%expect_test ("[quickcheck] failure with shrinker" [@tags "64-bits-only"]) =
   let cr = CR.Comment in
   quickcheck
     [%here]
@@ -640,7 +640,7 @@ let%expect_test "[quickcheck_m] success" =
 (* Quickcheck pseudo-random generation is different on 32-bit and 64-bit, so we only run
    Quickcheck failure tests on 64-bit builds. *)
 
-let%expect_test ("[quickcheck_m] failure"[@tags "64-bits-only"]) =
+let%expect_test ("[quickcheck_m] failure" [@tags "64-bits-only"]) =
   let cr = CR.Comment in
   quickcheck_m
     [%here]
@@ -655,7 +655,7 @@ let%expect_test ("[quickcheck_m] failure"[@tags "64-bits-only"]) =
     BAD |}]
 ;;
 
-let%expect_test ("[quickcheck_m] failure with multiple CRs"[@tags "64-bits-only"]) =
+let%expect_test ("[quickcheck_m] failure with multiple CRs" [@tags "64-bits-only"]) =
   let cr = CR.Comment in
   quickcheck_m
     [%here]
@@ -673,7 +673,7 @@ let%expect_test ("[quickcheck_m] failure with multiple CRs"[@tags "64-bits-only"
     second |}]
 ;;
 
-let%expect_test ("[quickcheck_m] raised exception"[@tags "64-bits-only"]) =
+let%expect_test ("[quickcheck_m] raised exception" [@tags "64-bits-only"]) =
   let cr = CR.Comment in
   require_does_not_raise [%here] (fun () ->
     quickcheck_m
@@ -688,7 +688,7 @@ let%expect_test ("[quickcheck_m] raised exception"[@tags "64-bits-only"]) =
     ("unexpectedly raised" BAD) |}]
 ;;
 
-let%expect_test ("[quickcheck_m] failure with shrinker"[@tags "64-bits-only"]) =
+let%expect_test ("[quickcheck_m] failure with shrinker" [@tags "64-bits-only"]) =
   let cr = CR.Comment in
   quickcheck_m
     [%here]

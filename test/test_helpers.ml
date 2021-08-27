@@ -130,7 +130,7 @@ let%expect_test "[require_no_allocation] ignores non-allocating functions" =
 ;;
 
 let%expect_test ("[require_no_allocation] shows breach and expected, but does not show \
-                  allocation"[@tags "no-js"])
+                  allocation" [@tags "no-js"])
   =
   ignore
     (Expect_test_helpers_core_private.require_allocation_does_not_exceed
@@ -145,7 +145,7 @@ let%expect_test ("[require_no_allocation] shows breach and expected, but does no
     ("allocation exceeded limit" (allocation_limit (Minor_words 0))) |}]
 ;;
 
-let%expect_test ("[require_allocation_does_not_exceed] shows breach but not allocation"[@tags
+let%expect_test ("[require_allocation_does_not_exceed] shows breach but not allocation" [@tags
                    "no-js"])
   =
   ignore
