@@ -732,3 +732,46 @@ let%expect_test "Phys_equal" =
       (foo)
       (foo)) |}]
 ;;
+
+let%test_module _ =
+  (module struct
+    let flush_count = ref 0
+
+    module Expect_test_config = struct
+      include Expect_test_config
+
+      let flush () = Int.incr flush_count
+    end
+
+    let with_flush_count f =
+      let count1 = !flush_count in
+      let result = f () in
+      let count2 = !flush_count in
+      let flushed_n_times = count2 - count1 in
+      print_s [%message (flushed_n_times : int)];
+      result
+    ;;
+
+    let%expect_test "[%expect.output]" =
+      let output =
+        with_flush_count (fun () ->
+          print_endline "This is a sentence.";
+          [%expect.output])
+      in
+      [%expect {| (flushed_n_times 1) |}];
+      print_string output;
+      [%expect {| This is a sentence. |}]
+    ;;
+
+    let%expect_test "expect_test_output" =
+      let output =
+        with_flush_count (fun () ->
+          print_endline "This is a sentence.";
+          expect_test_output [%here])
+      in
+      [%expect {| (flushed_n_times 0) |}];
+      print_string output;
+      [%expect {| This is a sentence. |}]
+    ;;
+  end)
+;;
