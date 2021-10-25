@@ -99,13 +99,8 @@ module type Expect_test_helpers_base = sig
   val print_string : ?hide_positions:bool (** default is [false] *) -> string -> unit
   val print_endline : ?hide_positions:bool (** default is [false] *) -> string -> unit
 
-  (** Behaves like [[%expect.output]]. Omits a call to [Expect_test_config.flush].
-
-      In most cases, [Expect_test_config.flush] does nothing. It is a holdover from when
-      [Async] output needed special flushing behavior in tests. This function should serve
-      as a replacement for [[%expect.output]] in most or all cases. *)
+  (** Behaves like [[%expect.output]].  *)
   val expect_test_output : Source_code_position.t -> string
-
 
   (** [print_cr here message] prints a [CR require-failed], which will appear in
       expect-test output. The CR will appear in the feature owner's [fe todo], thus
