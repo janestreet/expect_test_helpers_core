@@ -228,3 +228,9 @@ let%expect_test "[print_and_check_container_sexps] failure" =
        (0xa  1)
        (0x64 2)))) |}]
 ;;
+
+let%expect_test "remove_time_span" =
+  remove_time_spans "hello240ms 300ms world 8.4s 0.1d .9h 30m122320002ns .0002us"
+  |> print_endline;
+  [%expect "hello240ms SPAN world SPAN SPAN .SPAN SPAN .SPAN"]
+;;

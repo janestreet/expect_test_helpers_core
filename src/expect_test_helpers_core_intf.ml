@@ -135,6 +135,9 @@ module type Expect_test_helpers_core = sig
     -> 'a list
     -> unit
 
+  (** Removes strings that look like time spans; see [Time.Span]. *)
+  val remove_time_spans : string -> string
+
   (** {3 Allocation tests} *)
 
 

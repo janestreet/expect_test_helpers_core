@@ -92,6 +92,14 @@ module type Expect_test_helpers_base = sig
   (** Like [replace], for every atom in a sexp. *)
   val replace_s : Sexp.t -> pattern:string -> with_:string -> Sexp.t
 
+  (** Applies [f] at every node in the given sexp, top-down, recurring on the contents of
+      the output. The word "smash" is used as in the sexp command-line tool's query
+      language. See: https://github.com/janestreet/sexp *)
+  val smash_sexp : Sexp.t -> f:(Sexp.t -> Sexp.t) -> Sexp.t
+
+  (** Removes OCaml backtraces from sexps. *)
+  val remove_backtraces : Sexp.t -> Sexp.t
+
   (** For printing an s-expression to stdout.  [hide_positions] works as in
       [sexp_to_string]. *)
   val print_s : ?hide_positions:bool (** default is [false] *) -> Sexp.t -> unit

@@ -300,6 +300,21 @@ let print_and_check_container_sexps (type a) ?cr ?hide_positions here m list =
   print_and_check_hashable_sexps ?cr ?hide_positions here (module M) list
 ;;
 
+let remove_time_spans =
+  let span_regex =
+    lazy
+      (let sign = Re.set "-+" in
+       let part =
+         let integer = Re.rep1 Re.digit in
+         let decimal = Re.opt (Re.seq [ Re.char '.'; Re.rep1 Re.digit ]) in
+         let suffixes = List.map ~f:Re.str [ "d"; "h"; "m"; "s"; "ms"; "us"; "ns" ] in
+         Re.seq [ integer; decimal; Re.alt suffixes ]
+       in
+       Re.compile (Re.seq [ Re.opt sign; Re.word (Re.rep1 part) ]))
+  in
+  fun string -> Re.replace_string (force span_regex) ~by:"SPAN" string
+;;
+
 module Expect_test_helpers_core_private = struct
   let require_allocation_does_not_exceed = require_allocation_does_not_exceed_private
 end

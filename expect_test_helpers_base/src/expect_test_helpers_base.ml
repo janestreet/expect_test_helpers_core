@@ -134,6 +134,24 @@ let wrap f =
     f (maybe_hide_positions_in_string ?hide_positions string))
 ;;
 
+let rec smash_sexp sexp ~f =
+  match f sexp with
+  | Sexp.List list -> Sexp.List (List.map list ~f:(smash_sexp ~f))
+  | Sexp.Atom _ as atom -> atom
+;;
+
+let remove_backtraces =
+  let prefixes =
+    (* taken from [printexc.ml] in ocaml runtime *)
+    [ "Raised at "; "Re-raised at "; "Raised by primitive operation at "; "Called from " ]
+  in
+  smash_sexp ~f:(function
+    | Sexp.(List (Atom hd :: _))
+      when List.exists prefixes ~f:(fun prefix -> String.is_prefix ~prefix hd) ->
+      Sexp.(List [ Atom "ELIDED BACKTRACE" ])
+    | s -> s)
+;;
+
 let print_endline = Staged.unstage (wrap print_endline)
 let print_string = Staged.unstage (wrap print_string)
 let print_s ?hide_positions sexp = print_string (sexp_to_string ?hide_positions sexp)

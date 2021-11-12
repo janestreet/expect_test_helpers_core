@@ -767,3 +767,37 @@ let%test_module _ =
     ;;
   end)
 ;;
+
+let%expect_test "smash_sexp" =
+  {|
+((name (Ok "John Jacob Jingleheimer Schmidt"))
+ (id (Error "That's my name, too!"))
+ (contents
+   (Ok
+    ((date (Error "I have no idea."))
+     (time (Ok "Whenever he goes out."))))))
+|}
+  |> Parsexp.Single.parse_string_exn
+  |> smash_sexp ~f:(function
+    | List [ Atom "Ok"; ok ] -> ok
+    | sexp -> sexp)
+  |> print_s;
+  [%expect
+    {|
+    ((name "John Jacob Jingleheimer Schmidt")
+     (id (Error "That's my name, too!"))
+     (contents ((date (Error "I have no idea.")) (time "Whenever he goes out.")))) |}]
+;;
+
+let%expect_test "remove_backtrace" =
+  {|
+((backtrace
+ ("Raised at Base__Error.raise in file \"error.ml\" (inlined), line 9, characters 14-30"
+  "Called from Base__Error.raise_s in file \"error.ml\", line 10, characters 19-40"
+  "Called from Base__Result.try_with in file \"result.ml\", line 227, characters 9-15")))
+|}
+  |> Parsexp.Single.parse_string_exn
+  |> remove_backtraces
+  |> print_s;
+  [%expect {| ((backtrace ("ELIDED BACKTRACE"))) |}]
+;;
