@@ -13,7 +13,7 @@ depends: [
   "ocaml" {>= "4.08.0"}
   "base"
   "base_quickcheck"
-  "core_kernel"
+  "core"
   "ppx_jane"
   "sexp_pretty"
   "stdio"
