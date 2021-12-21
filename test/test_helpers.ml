@@ -137,7 +137,7 @@ let%expect_test ("[require_no_allocation] shows breach and expected, but does no
        ~cr:Comment
        (Minor_words 0)
        [%here]
-       (fun () -> List.map [ 1; 2; 3 ] ~f:(fun i -> i + 1))
+       (fun () -> (List.map [@inlined never]) [ 1; 2; 3 ] ~f:(fun i -> i + 1))
      : int list);
   [%expect
     {|
@@ -153,7 +153,7 @@ let%expect_test ("[require_allocation_does_not_exceed] shows breach but not allo
        ~cr:Comment
        (Minor_words 1)
        [%here]
-       (fun () -> List.map [ 1; 2; 3 ] ~f:(fun i -> i + 1))
+       (fun () -> (List.map [@inlined never]) [ 1; 2; 3 ] ~f:(fun i -> i + 1))
      : int list);
   [%expect
     {|
