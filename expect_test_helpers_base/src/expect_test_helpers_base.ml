@@ -239,15 +239,20 @@ let require_compare_equal
 ;;
 
 let require_sets_are_equal
-      (type elt cmp)
+      (type elt)
       ?cr
       ?hide_positions
       ?(names = "first", "second")
       here
-      (module Elt : With_comparator with type t = elt and type comparator_witness = cmp)
       first
       second
   =
+  let module Elt = struct
+    type t = elt
+
+    let sexp_of_t = (Set.comparator first).sexp_of_t
+  end
+  in
   require
     ?cr
     ?hide_positions

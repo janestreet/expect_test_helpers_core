@@ -154,6 +154,7 @@ let print_and_check_stable_int63able_type
 let require_allocation_does_not_exceed_private
       ?(cr = CR.CR)
       ?hide_positions
+      ?(print_limit = 1_000)
       allocation_limit
       here
       f
@@ -183,13 +184,20 @@ let require_allocation_does_not_exceed_private
            else Some minor_words_allocated, None
          in
          if not (CR.hide_unstable_output cr)
-         then
+         then (
+           let allocs =
+             if List.length allocs > print_limit
+             then (
+               Printf.printf "Cutting off list of allocations after %d\n" print_limit;
+               List.take allocs print_limit)
+             else allocs
+           in
            List.iter allocs ~f:(fun { size_in_words; is_major; backtrace } ->
              Printf.printf
                "Allocation of %d %s words occurred at:\n%s\n"
                size_in_words
                (if is_major then "major" else "minor")
-               backtrace);
+               backtrace));
          [%message
            "allocation exceeded limit"
              (allocation_limit : Allocation_limit.t)
@@ -198,12 +206,23 @@ let require_allocation_does_not_exceed_private
   x
 ;;
 
-let require_allocation_does_not_exceed ?hide_positions allocation_limit here f =
-  require_allocation_does_not_exceed_private ?hide_positions allocation_limit here f
+let require_allocation_does_not_exceed
+      ?print_limit
+      ?hide_positions
+      allocation_limit
+      here
+      f
+  =
+  require_allocation_does_not_exceed_private
+    ?print_limit
+    ?hide_positions
+    allocation_limit
+    here
+    f
 ;;
 
-let require_no_allocation ?hide_positions here f =
-  require_allocation_does_not_exceed ?hide_positions (Minor_words 0) here f
+let require_no_allocation ?print_limit ?hide_positions here f =
+  require_allocation_does_not_exceed ?print_limit ?hide_positions (Minor_words 0) here f
 ;;
 
 let print_and_check_comparable_sexps

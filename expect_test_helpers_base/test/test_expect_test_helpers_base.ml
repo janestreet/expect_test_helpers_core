@@ -424,15 +424,10 @@ let%expect_test "hide_temp_files_in_string" =
 ;;
 
 let%expect_test "[require_sets_are_equal] success" =
-  require_sets_are_equal
-    [%here]
-    (module Int)
-    (Set.empty (module Int))
-    (Set.empty (module Int));
+  require_sets_are_equal [%here] (Set.empty (module Int)) (Set.empty (module Int));
   [%expect {| |}];
   require_sets_are_equal
     [%here]
-    (module Int)
     (Set.of_list (module Int) [ 1; 2; 3 ])
     (Set.of_list (module Int) [ 3; 2; 1 ]);
   [%expect {| |}]
@@ -441,7 +436,6 @@ let%expect_test "[require_sets_are_equal] success" =
 let%expect_test "[require_sets_are_equal] failure" =
   require_sets_are_equal
     [%here]
-    (module Int)
     ~cr:Comment
     (Set.of_list (module Int) [ 1; 2 ])
     (Set.of_list (module Int) [ 2; 3 ]);
@@ -456,7 +450,6 @@ let%expect_test "[require_sets_are_equal] failure" =
 let%expect_test "[require_sets_are_equal] failure with extras only in first" =
   require_sets_are_equal
     [%here]
-    (module Int)
     ~cr:Comment
     (Set.of_list (module Int) [ 1; 2 ])
     (Set.of_list (module Int) [ 2 ]);
@@ -469,7 +462,6 @@ let%expect_test "[require_sets_are_equal] failure with extras only in first" =
 let%expect_test "[require_sets_are_equal] failure with extras only in second" =
   require_sets_are_equal
     [%here]
-    (module Int)
     ~cr:Comment
     (Set.of_list (module Int) [ 2 ])
     (Set.of_list (module Int) [ 2; 3 ]);
@@ -482,7 +474,6 @@ let%expect_test "[require_sets_are_equal] failure with extras only in second" =
 let%expect_test "[require_sets_are_equal] failure with names" =
   require_sets_are_equal
     [%here]
-    (module Int)
     (Set.of_list (module Int) [ 1; 2 ])
     (Set.of_list (module Int) [ 2; 3 ])
     ~cr:Comment

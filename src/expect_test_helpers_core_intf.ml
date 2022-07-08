@@ -168,9 +168,12 @@ module type Expect_test_helpers_core = sig
       intended to be measured.  With the former idiom, the compiler cannot do such
       optimization and must compute the result of [f ()].
 
+      Also prints up to [print_limit] allocation locations.
+
       See documentation above about CRs and workflows for failing allocation tests. *)
   val require_allocation_does_not_exceed
-    :  ?hide_positions:bool (** default is [false] *)
+    :  ?print_limit:int (** default is [1_000] *)
+    -> ?hide_positions:bool (** default is [false] *)
     -> Allocation_limit.t
     -> Source_code_position.t
     -> (unit -> 'a)
@@ -181,7 +184,8 @@ module type Expect_test_helpers_core = sig
 
       See documentation above about CRs and workflows for failing allocation tests. *)
   val require_no_allocation
-    :  ?hide_positions:bool (** default is [false] *)
+    :  ?print_limit:int
+    -> ?hide_positions:bool (** default is [false] *)
     -> Source_code_position.t
     -> (unit -> 'a)
     -> 'a
@@ -196,6 +200,7 @@ module type Expect_test_helpers_core = sig
     val require_allocation_does_not_exceed
       :  ?cr:CR.t
       -> ?hide_positions:bool
+      -> ?print_limit:int
       -> Allocation_limit.t
       -> Source_code_position.t
       -> (unit -> 'a)
