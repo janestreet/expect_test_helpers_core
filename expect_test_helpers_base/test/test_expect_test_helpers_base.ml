@@ -792,3 +792,127 @@ let%expect_test "remove_backtrace" =
   |> print_s;
   [%expect {| ((backtrace ("ELIDED BACKTRACE"))) |}]
 ;;
+
+let%expect_test "print_and_check_stringable" =
+  print_and_check_stringable
+    ~cr:Comment
+    [%here]
+    (module Int32)
+    Int32.[ min_value; minus_one; zero; one; max_value ];
+  [%expect {|
+    -2147483648
+    -1
+    0
+    1
+    2147483647 |}]
+;;
+
+let%expect_test "print_and_check_sexpable" =
+  print_and_check_sexpable
+    ~cr:Comment
+    [%here]
+    (module Int32)
+    Int32.[ min_value; minus_one; zero; one; max_value ];
+  [%expect {|
+    -2147483648
+    -1
+    0
+    1
+    2147483647 |}]
+;;
+
+let%expect_test "print_and_check_round_trip" =
+  (* conversion works for all int64s *)
+  let module Int64_as_string = struct
+    type t = int64
+    type repr = string [@@deriving sexp_of]
+
+    let to_repr = Int64.to_string
+    let of_repr = Int64.of_string
+    let repr_name = "string"
+  end
+  in
+  (* conversion fails to round-trip for some int64s *)
+  let module Int64_as_int32_trunc = struct
+    type t = int64
+    type repr = int32 [@@deriving sexp_of]
+
+    let to_repr = Int64.to_int32_trunc
+    let of_repr = Int64.of_int32
+    let repr_name = "int32"
+  end
+  in
+  (* conversion raises for some int64s *)
+  let module Int64_as_int63_exn = struct
+    type t = int64
+    type repr = Int63.t [@@deriving sexp_of]
+
+    let to_repr x =
+      try Int63.of_int64_exn x with
+      | Failure string ->
+        (* error message varies by platform, so we normalize it *)
+        failwith (String.substr_replace_all string ~pattern:" int " ~with_:" int63 ")
+    ;;
+
+    let of_repr = Int63.to_int64
+    let repr_name = "int63"
+  end
+  in
+  (* test all three conversions *)
+  let test list =
+    print_and_check_round_trip
+      ~cr:Comment
+      [%here]
+      (module Int64)
+      [ (module Int64_as_string)
+      ; (module Int64_as_int32_trunc)
+      ; (module Int64_as_int63_exn)
+      ]
+      list
+  in
+  (* successful round-trip *)
+  test [ -1L; 0L; 1L ];
+  [%expect
+    {|
+    ((string -1)
+     (int32  -1)
+     (int63  -1))
+    ((string 0)
+     (int32  0)
+     (int63  0))
+    ((string 1)
+     (int32  1)
+     (int63  1)) |}];
+  (* unsuccessful round-trip *)
+  test
+    [ Int64.pred (Int64.of_int32 Int32.min_value)
+    ; Int64.succ (Int64.of_int32 Int32.max_value)
+    ];
+  [%expect
+    {|
+    ((string -2147483649)
+     (int32  2147483647)
+     (int63  -2147483649))
+    (* require-failed: lib/expect_test_helpers/base/test/test_expect_test_helpers_base.ml:LINE:COL. *)
+    ("int32 serialization failed to round-trip"
+      (original        -2147483649)
+      (int32           2147483647)
+      (int32_roundtrip 2147483647))
+    ((string 2147483648)
+     (int32  -2147483648)
+     (int63  2147483648))
+    (* require-failed: lib/expect_test_helpers/base/test/test_expect_test_helpers_base.ml:LINE:COL. *)
+    ("int32 serialization failed to round-trip"
+      (original        2147483648)
+      (int32           -2147483648)
+      (int32_roundtrip -2147483648)) |}];
+  (* conversion raises *)
+  test [ Int64.min_value; Int64.max_value ];
+  [%expect
+    {|
+    (* require-failed: lib/expect_test_helpers/base/test/test_expect_test_helpers_base.ml:LINE:COL. *)
+    ("unexpectedly raised" (
+      Failure
+      "conversion from int64 to int63 failed: -9223372036854775808 is out of range")) |}];
+  ()
+;;

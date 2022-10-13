@@ -92,7 +92,7 @@ let%expect_test "[print_and_check_stable_type] with exceeded max-length" =
      (max_binable_length 1)) |}]
 ;;
 
-let%expect_test "[print_and_check_stable_type] with conversion that raises" =
+let%expect_test "[print_and_check_stable_type] with comparison that raises" =
   let module Broken = struct
     type t = int [@@deriving sexp, bin_io]
 

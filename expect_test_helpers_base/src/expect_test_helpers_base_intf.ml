@@ -26,6 +26,25 @@ module type With_equal = sig
   type t [@@deriving equal, sexp_of]
 end
 
+module type With_round_trip = sig
+  type t
+  type repr [@@deriving sexp_of]
+
+  val to_repr : t -> repr
+  val of_repr : repr -> t
+  val repr_name : string
+end
+
+module type With_sexpable = sig
+  type t [@@deriving equal, sexp]
+end
+
+module type With_stringable = sig
+  type t [@@deriving equal]
+
+  include Stringable.S with type t := t
+end
+
 module Quickcheck = Base_quickcheck
 
 module type Expect_test_helpers_base = sig
@@ -34,6 +53,9 @@ module type Expect_test_helpers_base = sig
 
   module type With_compare = With_compare
   module type With_equal = With_equal
+  module type With_round_trip = With_round_trip
+  module type With_sexpable = With_sexpable
+  module type With_stringable = With_stringable
 
   module CR : sig
     include module type of struct
@@ -298,6 +320,38 @@ module type Expect_test_helpers_base = sig
     -> Source_code_position.t
     -> ('first -> Sexp.t)
     -> ('first, 'second) Either.t
+    -> unit
+
+  (** Print string representations of the given values, and test that [to_string] /
+      [of_string] round-trip. *)
+  val print_and_check_stringable
+    :  ?cr:CR.t (** default is [CR] *)
+    -> ?hide_positions:bool (** default is [false] when [cr=CR], [true otherwise] *)
+    -> Source_code_position.t
+    -> (module With_stringable with type t = 'a)
+    -> 'a list
+    -> unit
+
+  (** Print sexp representations of the given values, and test that [sexp_of_t] /
+      [t_of_sexp] round-trip. *)
+  val print_and_check_sexpable
+    :  ?cr:CR.t (** default is [CR] *)
+    -> ?hide_positions:bool (** default is [false] when [cr=CR], [true otherwise] *)
+    -> Source_code_position.t
+    -> (module With_sexpable with type t = 'a)
+    -> 'a list
+    -> unit
+
+  (** Print the [With_round_trip] representations of the given values. If there are
+      multiple representations, includes the [repr_name] of each in the output. Tests that
+      [to_repr] and [of_repr] round-trip for each representation. *)
+  val print_and_check_round_trip
+    :  ?cr:CR.t (** default is [CR] *)
+    -> ?hide_positions:bool (** default is [false] when [cr=CR], [true otherwise] *)
+    -> Source_code_position.t
+    -> (module With_equal with type t = 'a)
+    -> (module With_round_trip with type t = 'a) list
+    -> 'a list
     -> unit
 
 

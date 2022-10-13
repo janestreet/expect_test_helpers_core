@@ -401,6 +401,104 @@ let require_error ?cr ?hide_positions ?(print_error = false) here sexp_of_ok res
   require_error_result ?cr ?hide_positions ?print_error here sexp_of_ok res
 ;;
 
+let print_and_check_round_trip
+      (type a)
+      ?cr
+      ?hide_positions
+      here
+      (module T : With_equal with type t = a)
+      reprs
+      examples
+  =
+  require_does_not_raise ?cr ?hide_positions here (fun () ->
+    let tag_of name =
+      String.map name ~f:(fun char -> if Char.is_alphanum char then char else '_')
+    in
+    List.iter examples ~f:(fun t ->
+      (* compute conversions for each value *)
+      let conversions =
+        List.map reprs ~f:(fun (module M : With_round_trip with type t = a) ->
+          let repr = M.to_repr t in
+          let sexp = M.sexp_of_repr repr in
+          let round_trip_result = M.of_repr repr in
+          let name = M.repr_name in
+          name, sexp, round_trip_result)
+      in
+      (* print one-way conversions *)
+      (match conversions with
+       | [] -> (* a useless case anyway *) ()
+       | [ (_, sexp, _) ] ->
+         (* only one repr, print unlabeled *)
+         print_s sexp
+       | _ :: _ :: _ ->
+         (* multiple reprs, print with labels *)
+         print_s
+           (List
+              (List.map conversions ~f:(fun (name, sexp, _) ->
+                 [%sexp (tag_of name : string), (sexp : Sexp.t)]))));
+      (* check two-way round-trip *)
+      List.iter conversions ~f:(fun (name, sexp, round_trip) ->
+        require
+          ?cr
+          ?hide_positions
+          here
+          (T.equal t round_trip)
+          ~if_false_then_print_s:
+            (lazy
+              (Sexp.message
+                 (name ^ " serialization failed to round-trip")
+                 [ "original", T.sexp_of_t t
+                 ; tag_of name, sexp
+                 ; tag_of name ^ "_roundtrip", T.sexp_of_t round_trip
+                 ])))))
+;;
+
+let print_and_check_stringable
+      (type a)
+      ?cr
+      ?hide_positions
+      here
+      (module T : With_stringable with type t = a)
+      list
+  =
+  let module T = struct
+    include T
+
+    let sexp_of_t t = Sexp.Atom (to_string t)
+  end
+  in
+  let module Conv = struct
+    type t = T.t
+    type repr = string [@@deriving sexp_of]
+
+    let to_repr = T.to_string
+    let of_repr = T.of_string
+    let repr_name = "string"
+  end
+  in
+  print_and_check_round_trip ?cr ?hide_positions here (module T) [ (module Conv) ] list
+;;
+
+let print_and_check_sexpable
+      (type a)
+      ?cr
+      ?hide_positions
+      here
+      (module T : With_sexpable with type t = a)
+      list
+  =
+  let module Conv = struct
+    type t = T.t
+    type repr = Sexp.t [@@deriving sexp_of]
+
+    let to_repr = T.sexp_of_t
+    let of_repr = T.t_of_sexp
+    let repr_name = "sexp"
+  end
+  in
+  print_and_check_round_trip ?cr ?hide_positions here (module T) [ (module Conv) ] list
+;;
+
 let show_raise (type a) ?hide_positions ?show_backtrace (f : unit -> a) =
   print_s
     ?hide_positions

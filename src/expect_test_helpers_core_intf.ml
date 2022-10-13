@@ -187,7 +187,7 @@ module type Expect_test_helpers_core = sig
     :  ?print_limit:int
     -> ?hide_positions:bool (** default is [false] *)
     -> Source_code_position.t
-    -> (unit -> 'a)
+    -> ((unit -> 'a)[@local])
     -> 'a
 
   (**/**)
