@@ -123,6 +123,17 @@ module type Expect_test_helpers_base = sig
   (** Behaves like [[%expect.output]].  *)
   val expect_test_output : Source_code_position.t -> string
 
+  (** Returns [true] if running inside the body of [let%expect_test], or [false]
+      otherwise. Use to test whether [expect_test_output] will raise, for example. Unlike
+      [Core.am_running_test], this is not configured by an environment variable, and is
+      not inherited by child processes. *)
+  val am_running_expect_test : unit -> bool
+
+  (** If [am_running_expect_test () = false], raises with an explanatory error message. Do
+      not use [require am_running_expect_test], as outside of an expect test that may not
+      accomplish anything. *)
+  val assert_am_running_expect_test : Source_code_position.t -> unit
+
   (** [print_cr here message] prints a [CR require-failed], which will appear in
       expect-test output. The CR will appear in the feature owner's [fe todo], thus
       preventing release of the feature. [print_cr] is an expect-test-friendly version of
@@ -169,6 +180,30 @@ module type Expect_test_helpers_base = sig
   (** Like [require_equal], but derives an equality predicate from a comparison
       function. *)
   val require_compare_equal
+    :  ?cr:CR.t (** default is [CR]    *)
+    -> ?hide_positions:bool (** default is [false] when [cr=CR], [true] otherwise *)
+    -> ?message:string
+    -> Source_code_position.t
+    -> (module With_compare with type t = 'a)
+    -> 'a
+    -> 'a
+    -> unit
+
+  (** Like [require_equal] but instead requires that the arguments are *not* equal. *)
+  val require_not_equal
+    :  ?cr:CR.t (** default is [CR]    *)
+    -> ?hide_positions:bool (** default is [false] when [cr=CR], [true] otherwise *)
+    -> ?if_false_then_print_s:Sexp.t Lazy.t
+    -> ?message:string
+    -> Source_code_position.t
+    -> (module With_equal with type t = 'a)
+    -> 'a
+    -> 'a
+    -> unit
+
+  (** Like [require_not_equal], but derives an equality predicate from a comparison
+      function. *)
+  val require_compare_not_equal
     :  ?cr:CR.t (** default is [CR]    *)
     -> ?hide_positions:bool (** default is [false] when [cr=CR], [true] otherwise *)
     -> ?message:string

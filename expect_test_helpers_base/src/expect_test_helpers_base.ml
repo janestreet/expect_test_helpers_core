@@ -129,6 +129,19 @@ let expect_test_output here =
     (Expect_test_common.File.Location.of_source_code_position here)
 ;;
 
+let am_running_expect_test = Expect_test_collector.am_running_expect_test
+
+let assert_am_running_expect_test here =
+  if am_running_expect_test ()
+  then ()
+  else
+    raise_s
+      [%message
+        "This code should be run inside an expect test; currently, it is running outside \
+         an expect test."
+          ~_:(here : Source_code_position.t)]
+;;
+
 let wrap f =
   Staged.stage (fun ?hide_positions string ->
     f (maybe_hide_positions_in_string ?hide_positions string))
@@ -214,6 +227,31 @@ let require_equal
             ~_:(if_false_then_print_s : (Sexp.t Lazy.t option[@sexp.option]))])
 ;;
 
+let require_not_equal
+      (type a)
+      ?cr
+      ?hide_positions
+      ?if_false_then_print_s
+      ?(message = "values are equal")
+      here
+      (module M : With_equal with type t = a)
+      x
+      y
+  =
+  require
+    ?cr
+    ?hide_positions
+    here
+    (not (M.equal x y))
+    ~if_false_then_print_s:
+      (lazy
+        [%message
+          message
+            ~_:(x : M.t)
+            ~_:(y : M.t)
+            ~_:(if_false_then_print_s : (Sexp.t Lazy.t option[@sexp.option]))])
+;;
+
 let require_compare_equal
       (type a)
       ?cr
@@ -225,6 +263,30 @@ let require_compare_equal
       y
   =
   require_equal
+    ?cr
+    ?hide_positions
+    ?message
+    here
+    (module struct
+      include M
+
+      let equal = [%compare.equal: t]
+    end)
+    x
+    y
+;;
+
+let require_compare_not_equal
+      (type a)
+      ?cr
+      ?hide_positions
+      ?message
+      here
+      (module M : With_compare with type t = a)
+      x
+      y
+  =
+  require_not_equal
     ?cr
     ?hide_positions
     ?message

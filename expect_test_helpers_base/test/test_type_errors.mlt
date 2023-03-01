@@ -6,8 +6,8 @@ let () = require_equal [%here] ()
 [%%expect
   {|
 Line _, characters _-_:
-Error: This expression has type unit but an expression was expected of type
-         (module Expect_test_helpers_base.With_equal with type t = 'a)
+Error: This expression should not be a unit literal, the expected type is
+       (module Expect_test_helpers_base.With_equal with type t = 'a)
 |}]
 
 let () = require_compare_equal [%here] ()
@@ -15,6 +15,6 @@ let () = require_compare_equal [%here] ()
 [%%expect
   {|
 Line _, characters _-_:
-Error: This expression has type unit but an expression was expected of type
-         (module Expect_test_helpers_base.With_compare with type t = 'a)
+Error: This expression should not be a unit literal, the expected type is
+       (module Expect_test_helpers_base.With_compare with type t = 'a)
 |}]

@@ -2,6 +2,25 @@ open! Base
 open! Stdio
 open! Expect_test_helpers_base
 
+let%expect_test "[am_running_expect_test] and [assert_am_running_expect_test] when true" =
+  require [%here] (am_running_expect_test ());
+  assert_am_running_expect_test [%here];
+  [%expect {| |}]
+;;
+
+let%test_unit "[am_running_expect_test] and [assert_am_running_expect_test] when false" =
+  assert (not (am_running_expect_test ()));
+  match assert_am_running_expect_test [%here] with
+  | () -> assert false
+  | exception exn ->
+    [%test_result: string]
+      (hide_positions_in_string (Exn.to_string exn))
+      ~expect:
+        "(\"This code should be run inside an expect test; currently, it is running \
+         outside an expect test.\"\n\
+        \  lib/expect_test_helpers/base/test/test_expect_test_helpers_base.ml:LINE:COL)"
+;;
+
 let%expect_test "multiple calls to [print_s] create multiple lines" =
   print_s [%message "hello"];
   print_s [%message "there"];
@@ -227,6 +246,68 @@ let%expect_test "[require_compare_equal] failure with [~message]" =
     {|
     (* require-failed: lib/expect_test_helpers/base/test/test_expect_test_helpers_base.ml:LINE:COL. *)
     ("The sky is falling!" 1 2) |}]
+;;
+
+let%expect_test "[require_not_equal] success" =
+  require_not_equal [%here] (module Int) ~cr:Comment 1 2;
+  [%expect {||}]
+;;
+
+let%expect_test "[require_not_equal] failure" =
+  require_not_equal [%here] (module Int) ~cr:Comment 1 1;
+  [%expect
+    {|
+    (* require-failed: lib/expect_test_helpers/base/test/test_expect_test_helpers_base.ml:LINE:COL. *)
+    ("values are equal" 1 1) |}]
+;;
+
+let%expect_test "[require_not_equal] failure with [~message]" =
+  require_not_equal [%here] (module Int) ~cr:Comment 1 1 ~message:"The sky is falling!";
+  [%expect
+    {|
+    (* require-failed: lib/expect_test_helpers/base/test/test_expect_test_helpers_base.ml:LINE:COL. *)
+    ("The sky is falling!" 1 1) |}]
+;;
+
+let%expect_test "[require_not_equal] failure with [~if_false_then_print_s]" =
+  require_not_equal
+    [%here]
+    (module Int)
+    ~cr:Comment
+    1
+    1
+    ~if_false_then_print_s:(lazy [%message "The sky is falling!"]);
+  [%expect
+    {|
+    (* require-failed: lib/expect_test_helpers/base/test/test_expect_test_helpers_base.ml:LINE:COL. *)
+    ("values are equal" 1 1 "The sky is falling!") |}]
+;;
+
+let%expect_test "[require_compare_not_equal] success" =
+  require_compare_not_equal [%here] (module Int) ~cr:Comment 1 2;
+  [%expect {||}]
+;;
+
+let%expect_test "[require_compare_not_equal] failure" =
+  require_compare_not_equal [%here] (module Int) ~cr:Comment 1 1;
+  [%expect
+    {|
+    (* require-failed: lib/expect_test_helpers/base/test/test_expect_test_helpers_base.ml:LINE:COL. *)
+    ("values are equal" 1 1) |}]
+;;
+
+let%expect_test "[require_compare_not_equal] failure with [~message]" =
+  require_compare_not_equal
+    [%here]
+    (module Int)
+    ~cr:Comment
+    1
+    1
+    ~message:"The sky is falling!";
+  [%expect
+    {|
+    (* require-failed: lib/expect_test_helpers/base/test/test_expect_test_helpers_base.ml:LINE:COL. *)
+    ("The sky is falling!" 1 1) |}]
 ;;
 
 let%expect_test "[require_does_not_raise], no exception" =
