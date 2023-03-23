@@ -356,7 +356,7 @@ let try_with ?raise_message ?(show_backtrace = false) (type a) (f : unit -> a) =
             ""
               ~_:(raise_message : (string option[@sexp.option]))
               ~_:(exn : exn)
-              (backtrace : (Backtrace.t option[@sexp.option]))]))
+              (backtrace : (Backtrace.t option[@sexp.option]))])) [@nontail]
 ;;
 
 let require_does_not_raise ?cr ?hide_positions ?show_backtrace here f =
