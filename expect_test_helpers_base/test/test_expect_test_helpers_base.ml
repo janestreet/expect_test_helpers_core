@@ -2,6 +2,9 @@ open! Base
 open! Stdio
 open! Expect_test_helpers_base
 
+(* A dummy location for testing purposes *)
+let nowhere = { Lexing.pos_fname = "test"; pos_lnum = 0; pos_bol = 0; pos_cnum = 0 }
+
 let%expect_test "[am_running_expect_test] and [assert_am_running_expect_test] when true" =
   require [%here] (am_running_expect_test ());
   assert_am_running_expect_test [%here];
@@ -334,24 +337,27 @@ let%expect_test "[require_does_not_raise] with a deep stack" =
 ;;
 
 let%expect_test "[require_does_raise] failure" =
-  require_does_raise [%here] ~cr:Comment (fun () -> ());
-  [%expect
-    {|
-    (* require-failed: lib/expect_test_helpers/base/test/test_expect_test_helpers_base.ml:LINE:COL. *)
+  require_does_raise nowhere ~cr:Comment (fun () -> ());
+  [%expect {|
+    (* require-failed: test:0:0. *)
     "did not raise" |}]
 ;;
 
 let%expect_test "[require_does_raise] success" =
   require_does_raise [%here] (fun () -> raise_s [%message "Boom!"]);
-  [%expect {|
-    Boom! |}]
+  [%expect {| Boom! |}]
+;;
+
+let%expect_test "[require_does_raise] success" =
+  require_does_raise [%here] ~cr:Comment (fun () ->
+    raise_s [%message "here: " (Source_code_position.to_string nowhere)]);
+  [%expect {| ("here: " test:0:0) |}]
 ;;
 
 let%expect_test "[require_does_raise ~hide_positions:true] success" =
   require_does_raise [%here] ~hide_positions:true (fun () -> raise_s [%message [%here]]);
   [%expect
-    {|
-    lib/expect_test_helpers/base/test/test_expect_test_helpers_base.ml:LINE:COL |}]
+    {| lib/expect_test_helpers/base/test/test_expect_test_helpers_base.ml:LINE:COL |}]
 ;;
 
 include struct
@@ -996,4 +1002,209 @@ let%expect_test "print_and_check_round_trip" =
       Failure
       "conversion from int64 to int63 failed: -9223372036854775808 is out of range")) |}];
   ()
+;;
+
+let%expect_test ("test_compare" [@tags "64-bits-only"]) =
+  let open Base_quickcheck.Export in
+  (* success *)
+  test_compare
+    [%here]
+    ~cr:Comment
+    (module struct
+      type t = int [@@deriving compare, quickcheck, sexp_of]
+    end);
+  [%expect {| |}];
+  (* failure *)
+  test_compare
+    [%here]
+    ~cr:Comment
+    (module struct
+      type t = int [@@deriving quickcheck, sexp_of]
+
+      let compare x _ = x
+    end);
+  [%expect
+    {|
+    ("quickcheck: test failed" (input 76753))
+    (* require-failed: lib/expect_test_helpers/base/test/test_expect_test_helpers_base.ml:LINE:COL. *)
+    ("[compare] is not reflexive"
+      (x           76753)
+      (compare_x_x 76753))
+    (* require-failed: lib/expect_test_helpers/base/test/test_expect_test_helpers_base.ml:LINE:COL. *)
+    ("[compare] is not asymmetric"
+      (x           76753)
+      (y           76753)
+      (compare_x_y 76753)
+      (compare_y_x 76753))
+    ("quickcheck: test failed" (input (-1710895137 -225617)))
+    (* require-failed: lib/expect_test_helpers/base/test/test_expect_test_helpers_base.ml:LINE:COL. *)
+    ("[compare] is not asymmetric"
+      (x           -1710895137)
+      (y           -225617)
+      (compare_x_y -1710895137)
+      (compare_y_x -225617))
+    ("quickcheck: test failed" (input (0 7408 29976914579383)))
+    (* require-failed: lib/expect_test_helpers/base/test/test_expect_test_helpers_base.ml:LINE:COL. *)
+    ("[compare] is not transitive"
+      (x           0)
+      (y           7408)
+      (z           29976914579383)
+      (compare_x_y 0)
+      (compare_y_z 7408)
+      (compare_x_z 0))
+    (* require-failed: lib/expect_test_helpers/base/test/test_expect_test_helpers_base.ml:LINE:COL. *)
+    ("[compare] is not transitive"
+      (x           0)
+      (y           29976914579383)
+      (z           7408)
+      (compare_x_y 0)
+      (compare_y_z 29976914579383)
+      (compare_x_z 0)) |}]
+;;
+
+let%expect_test ("test_equal" [@tags "64-bits-only"]) =
+  let open Base_quickcheck.Export in
+  (* success *)
+  test_equal
+    [%here]
+    ~cr:Comment
+    (module struct
+      type t = int [@@deriving equal, quickcheck, sexp_of]
+    end);
+  [%expect {| |}];
+  (* failure *)
+  test_equal
+    [%here]
+    ~cr:Comment
+    (module struct
+      type t = int [@@deriving quickcheck, sexp_of]
+
+      let equal x _ = x < 0
+    end);
+  [%expect
+    {|
+    ("quickcheck: test failed" (input 76753))
+    (* require-failed: lib/expect_test_helpers/base/test/test_expect_test_helpers_base.ml:LINE:COL. *)
+    ("[equal] is not reflexive"
+      (x         76753)
+      (equal_x_x false))
+    ("quickcheck: test failed" (input (-15508265059 76753)))
+    (* require-failed: lib/expect_test_helpers/base/test/test_expect_test_helpers_base.ml:LINE:COL. *)
+    ("[equal] is not symmetric"
+      (x         -15508265059)
+      (y         76753)
+      (equal_x_y true)
+      (equal_y_x false))
+    (* require-failed: lib/expect_test_helpers/base/test/test_expect_test_helpers_base.ml:LINE:COL. *)
+    ("[equal] is not transitive"
+      (x         -15508265059)
+      (y         76753)
+      (z         -15508265059)
+      (equal_x_y true)
+      (equal_y_z false)
+      (equal_x_z true))
+    ("quickcheck: test failed" (input (-54193148208643064 -15508265059 76753)))
+    (* require-failed: lib/expect_test_helpers/base/test/test_expect_test_helpers_base.ml:LINE:COL. *)
+    ("[equal] is not transitive"
+      (x         -54193148208643064)
+      (y         76753)
+      (z         -15508265059)
+      (equal_x_y true)
+      (equal_y_z false)
+      (equal_x_z true)) |}]
+;;
+
+let%expect_test ("test_compare_and_equal" [@tags "64-bits-only"]) =
+  let open Base_quickcheck.Export in
+  (* success *)
+  test_compare_and_equal
+    [%here]
+    ~cr:Comment
+    (module struct
+      type t = int [@@deriving compare, equal, quickcheck, sexp_of]
+    end);
+  [%expect {| |}];
+  (* failure *)
+  test_compare_and_equal
+    [%here]
+    ~cr:Comment
+    (module struct
+      type t = int [@@deriving quickcheck, sexp_of]
+
+      let compare x _ = x
+      let equal x _ = x < 0
+    end);
+  [%expect
+    {|
+    ("quickcheck: test failed" (input 76753))
+    (* require-failed: lib/expect_test_helpers/base/test/test_expect_test_helpers_base.ml:LINE:COL. *)
+    ("[compare] is not reflexive"
+      (x           76753)
+      (compare_x_x 76753))
+    (* require-failed: lib/expect_test_helpers/base/test/test_expect_test_helpers_base.ml:LINE:COL. *)
+    ("[compare] is not asymmetric"
+      (x           76753)
+      (y           76753)
+      (compare_x_y 76753)
+      (compare_y_x 76753))
+    ("quickcheck: test failed" (input (-1710895137 -225617)))
+    (* require-failed: lib/expect_test_helpers/base/test/test_expect_test_helpers_base.ml:LINE:COL. *)
+    ("[compare] is not asymmetric"
+      (x           -1710895137)
+      (y           -225617)
+      (compare_x_y -1710895137)
+      (compare_y_x -225617))
+    ("quickcheck: test failed" (input (0 7408 29976914579383)))
+    (* require-failed: lib/expect_test_helpers/base/test/test_expect_test_helpers_base.ml:LINE:COL. *)
+    ("[compare] is not transitive"
+      (x           0)
+      (y           7408)
+      (z           29976914579383)
+      (compare_x_y 0)
+      (compare_y_z 7408)
+      (compare_x_z 0))
+    (* require-failed: lib/expect_test_helpers/base/test/test_expect_test_helpers_base.ml:LINE:COL. *)
+    ("[compare] is not transitive"
+      (x           0)
+      (y           29976914579383)
+      (z           7408)
+      (compare_x_y 0)
+      (compare_y_z 29976914579383)
+      (compare_x_z 0))
+    ("quickcheck: test failed" (input 76753))
+    (* require-failed: lib/expect_test_helpers/base/test/test_expect_test_helpers_base.ml:LINE:COL. *)
+    ("[equal] is not reflexive"
+      (x         76753)
+      (equal_x_x false))
+    ("quickcheck: test failed" (input (-15508265059 76753)))
+    (* require-failed: lib/expect_test_helpers/base/test/test_expect_test_helpers_base.ml:LINE:COL. *)
+    ("[equal] is not symmetric"
+      (x         -15508265059)
+      (y         76753)
+      (equal_x_y true)
+      (equal_y_x false))
+    (* require-failed: lib/expect_test_helpers/base/test/test_expect_test_helpers_base.ml:LINE:COL. *)
+    ("[equal] is not transitive"
+      (x         -15508265059)
+      (y         76753)
+      (z         -15508265059)
+      (equal_x_y true)
+      (equal_y_z false)
+      (equal_x_z true))
+    ("quickcheck: test failed" (input (-54193148208643064 -15508265059 76753)))
+    (* require-failed: lib/expect_test_helpers/base/test/test_expect_test_helpers_base.ml:LINE:COL. *)
+    ("[equal] is not transitive"
+      (x         -54193148208643064)
+      (y         76753)
+      (z         -15508265059)
+      (equal_x_y true)
+      (equal_y_z false)
+      (equal_x_z true))
+    ("quickcheck: test failed" (input (-15508265059 76753)))
+    (* require-failed: lib/expect_test_helpers/base/test/test_expect_test_helpers_base.ml:LINE:COL. *)
+    ("[compare] and [equal] do not agree"
+      (x           -15508265059)
+      (y           76753)
+      (compare_x_y -15508265059)
+      (equal_x_y   true)) |}]
 ;;
