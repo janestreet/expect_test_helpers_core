@@ -166,12 +166,26 @@ let%expect_test "[require] true prints nothing" =
   [%expect {||}]
 ;;
 
-let%expect_test "[cr]" =
+let%expect_test "[print_cr]" =
   print_cr [%here] [%message "some message"] ~cr:Comment;
   [%expect
     {|
     (* require-failed: lib/expect_test_helpers/base/test/test_expect_test_helpers_base.ml:LINE:COL. *)
     "some message" |}]
+;;
+
+let print_cr_outside_expect_test =
+  Or_error.try_with (fun () -> print_cr ~cr:Comment [%here] [%message "oops"])
+;;
+
+let%expect_test "[print_cr] called outside an expect test" =
+  (match print_cr_outside_expect_test with
+   | Ok () -> print_cr [%here] [%message "expected [print_cr] to raise"]
+   | Error error -> print_s ~hide_positions:true (Error.sexp_of_t error));
+  [%expect
+    {|
+    ("This code should be run inside an expect test; currently, it is running outside an expect test."
+     lib/expect_test_helpers/base/test/test_expect_test_helpers_base.ml:LINE:COL) |}]
 ;;
 
 let%expect_test "[require] false respects [~cr] and default [~hide_positions]" =

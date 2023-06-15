@@ -184,6 +184,7 @@ let print_cr_with_optional_message
       here
       optional_message
   =
+  assert_am_running_expect_test here;
   match cr with
   | Suppress -> ()
   | _ ->
