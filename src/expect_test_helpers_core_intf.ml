@@ -27,10 +27,10 @@ module type With_comparable = sig
 end
 
 module Comparable_satisfies_with_comparable (M : sig
-    type t [@@deriving sexp_of]
+  type t [@@deriving sexp_of]
 
-    include Comparable.S with type t := t
-  end) : With_comparable =
+  include Comparable.S with type t := t
+end) : With_comparable =
   M
 
 module type With_hashable = sig
@@ -51,10 +51,10 @@ module type With_hashable = sig
 end
 
 module Hashable_satisfies_with_hashable (M : sig
-    type t [@@deriving sexp_of]
+  type t [@@deriving sexp_of]
 
-    include Hashable.S with type t := t
-  end) : With_hashable =
+  include Hashable.S with type t := t
+end) : With_hashable =
   M
 
 module type With_containers = sig
@@ -139,7 +139,6 @@ module type Expect_test_helpers_core = sig
   val remove_time_spans : string -> string
 
   (** {3 Allocation tests} *)
-
 
   module Allocation_limit : module type of struct
     include Allocation_limit

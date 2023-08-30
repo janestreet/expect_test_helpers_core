@@ -138,7 +138,7 @@ let%expect_test ("[require_no_allocation] shows breach and expected, but does no
        (Minor_words 0)
        [%here]
        (fun () -> (List.map [@inlined never]) [ 1; 2; 3 ] ~f:(fun i -> i + 1))
-     : int list);
+      : int list);
   [%expect
     {|
     (* require-failed: lib/expect_test_helpers/core/test/test_helpers.ml:LINE:COL. *)
@@ -146,7 +146,7 @@ let%expect_test ("[require_no_allocation] shows breach and expected, but does no
 ;;
 
 let%expect_test ("[require_allocation_does_not_exceed] shows breach but not allocation" [@tags
-                   "no-js"])
+                                                                                          "no-js"])
   =
   ignore
     (Expect_test_helpers_core_private.require_allocation_does_not_exceed
@@ -154,7 +154,7 @@ let%expect_test ("[require_allocation_does_not_exceed] shows breach but not allo
        (Minor_words 1)
        [%here]
        (fun () -> (List.map [@inlined never]) [ 1; 2; 3 ] ~f:(fun i -> i + 1))
-     : int list);
+      : int list);
   [%expect
     {|
     (* require-failed: lib/expect_test_helpers/core/test/test_helpers.ml:LINE:COL. *)

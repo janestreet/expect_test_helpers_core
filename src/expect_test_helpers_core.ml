@@ -25,14 +25,14 @@ module type Int63able = sig
 end
 
 let print_and_check_stable_internal
-      (type a)
-      ?cr
-      ?hide_positions
-      ?max_binable_length
-      here
-      (module M : Stable_without_comparator with type t = a)
-      (int63able : (module Int63able with type t = a) option)
-      list
+  (type a)
+  ?cr
+  ?hide_positions
+  ?max_binable_length
+  here
+  (module M : Stable_without_comparator with type t = a)
+  (int63able : (module Int63able with type t = a) option)
+  list
   =
   let module M = struct
     include M
@@ -106,13 +106,13 @@ let print_and_check_stable_internal
 ;;
 
 let print_and_check_stable_type
-      (type a)
-      ?cr
-      ?hide_positions
-      ?max_binable_length
-      here
-      (module M : Stable_without_comparator with type t = a)
-      list
+  (type a)
+  ?cr
+  ?hide_positions
+  ?max_binable_length
+  here
+  (module M : Stable_without_comparator with type t = a)
+  list
   =
   print_and_check_stable_internal
     ?cr
@@ -125,13 +125,13 @@ let print_and_check_stable_type
 ;;
 
 let print_and_check_stable_int63able_type
-      (type a)
-      ?cr
-      ?hide_positions
-      ?max_binable_length
-      here
-      (module M : Stable_int63able with type t = a)
-      list
+  (type a)
+  ?cr
+  ?hide_positions
+  ?max_binable_length
+  here
+  (module M : Stable_int63able with type t = a)
+  list
   =
   print_and_check_stable_internal
     ?cr
@@ -144,12 +144,12 @@ let print_and_check_stable_int63able_type
 ;;
 
 let require_allocation_does_not_exceed_private
-      ?(cr = CR.CR)
-      ?hide_positions
-      ?(print_limit = 1_000)
-      allocation_limit
-      here
-      f
+  ?(cr = CR.CR)
+  ?hide_positions
+  ?(print_limit = 1_000)
+  allocation_limit
+  here
+  f
   =
   let ( x
       , { Gc.For_testing.Allocation_report.major_words_allocated; minor_words_allocated }
@@ -171,7 +171,7 @@ let require_allocation_does_not_exceed_private
            if CR.hide_unstable_output cr
            then None, None
            else if major_words_allocated > 0
-                || Allocation_limit.show_major_words allocation_limit
+                   || Allocation_limit.show_major_words allocation_limit
            then Some minor_words_allocated, Some major_words_allocated
            else Some minor_words_allocated, None
          in
@@ -199,11 +199,11 @@ let require_allocation_does_not_exceed_private
 ;;
 
 let require_allocation_does_not_exceed
-      ?print_limit
-      ?hide_positions
-      allocation_limit
-      here
-      f
+  ?print_limit
+  ?hide_positions
+  allocation_limit
+  here
+  f
   =
   require_allocation_does_not_exceed_private
     ?print_limit
@@ -218,12 +218,12 @@ let require_no_allocation ?print_limit ?hide_positions here f =
 ;;
 
 let print_and_check_comparable_sexps
-      (type a)
-      ?cr
-      ?hide_positions
-      here
-      (module M : With_comparable with type t = a)
-      list
+  (type a)
+  ?cr
+  ?hide_positions
+  here
+  (module M : With_comparable with type t = a)
+  list
   =
   let set = Set.of_list (module M) list in
   let set_sexp = [%sexp (set : M.Set.t)] in
@@ -262,12 +262,12 @@ let print_and_check_comparable_sexps
 ;;
 
 let print_and_check_hashable_sexps
-      (type a)
-      ?cr
-      ?hide_positions
-      here
-      (module M : With_hashable with type t = a)
-      list
+  (type a)
+  ?cr
+  ?hide_positions
+  here
+  (module M : With_hashable with type t = a)
+  list
   =
   let hash_set = Hash_set.of_list (module M) list in
   let hash_set_sexp = [%sexp (hash_set : M.Hash_set.t)] in

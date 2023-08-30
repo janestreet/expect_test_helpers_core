@@ -506,7 +506,7 @@ let%expect_test "[replace]" =
 let%expect_test "[replace_s]" =
   [%sexp
     "copied file"
-  , { dst = "/tmp/dir.tmp.123456/file.txt"; src = "/jenga/root/app/foo/file.txt" }]
+    , { dst = "/tmp/dir.tmp.123456/file.txt"; src = "/jenga/root/app/foo/file.txt" }]
   |> replace_s ~pattern:"/tmp/dir.tmp.123456" ~with_:"$TMP"
   |> replace_s ~pattern:"/jenga/root" ~with_:"$ROOT"
   |> print_s;
@@ -654,7 +654,7 @@ let%expect_test ("[quickcheck] failure" [@tags "64-bits-only"]) =
     Base_quickcheck.quickcheck_generator_int
     ~sexp_of:Int.sexp_of_t
     ~f:(fun int ->
-      require [%here] ~cr (int > 100) ~if_false_then_print_s:(lazy [%message "BAD"]));
+    require [%here] ~cr (int > 100) ~if_false_then_print_s:(lazy [%message "BAD"]));
   [%expect
     {|
     ("quickcheck: test failed" (input -15508265059))
@@ -670,8 +670,8 @@ let%expect_test ("[quickcheck] failure with multiple CRs" [@tags "64-bits-only"]
     Base_quickcheck.quickcheck_generator_int
     ~sexp_of:Int.sexp_of_t
     ~f:(fun _ ->
-      print_cr [%here] ~cr [%message "first"];
-      require [%here] ~cr false ~if_false_then_print_s:(lazy [%message "second"]));
+    print_cr [%here] ~cr [%message "first"];
+    require [%here] ~cr false ~if_false_then_print_s:(lazy [%message "second"]));
   [%expect
     {|
     ("quickcheck: test failed" (input 76753))
@@ -813,8 +813,8 @@ let%expect_test "Phys_equal" =
     [%here]
     ~cr:Comment
     (module Phys_equal (struct
-         type t = string option [@@deriving sexp_of]
-       end))
+      type t = string option [@@deriving sexp_of]
+    end))
     (Some "foo")
     (Some ("fo" ^ "o"));
   [%expect
@@ -871,8 +871,8 @@ let%expect_test "smash_sexp" =
 |}
   |> Parsexp.Single.parse_string_exn
   |> smash_sexp ~f:(function
-    | List [ Atom "Ok"; ok ] -> ok
-    | sexp -> sexp)
+       | List [ Atom "Ok"; ok ] -> ok
+       | sexp -> sexp)
   |> print_s;
   [%expect
     {|

@@ -92,8 +92,8 @@ module type Expect_test_helpers_base = sig
   end
 
   module Phys_equal (M : sig
-      type t [@@deriving sexp_of]
-    end) : With_equal with type t = M.t
+    type t [@@deriving sexp_of]
+  end) : With_equal with type t = M.t
 
   module Sexp_style : sig
     include module type of struct
@@ -412,7 +412,6 @@ module type Expect_test_helpers_base = sig
     -> 'a list
     -> unit
 
-
   (** [quickcheck] is similar to [Base_quickcheck.Test.run], but
 
       1. [quickcheck] takes separate arguments for the values which
@@ -440,7 +439,7 @@ module type Expect_test_helpers_base = sig
   val quickcheck_m
     :  Source_code_position.t
     -> ?config:Base_quickcheck.Test.Config.t
-    (** default is [Base_quickcheck.Test.default_config] *)
+         (** default is [Base_quickcheck.Test.default_config] *)
     -> ?cr:CR.t (** default is [CR] *)
     -> ?examples:'a list
     -> ?hide_positions:bool (** default is [false] when [cr=CR], [true] otherwise *)
@@ -453,7 +452,7 @@ module type Expect_test_helpers_base = sig
   val test_compare
     :  Source_code_position.t
     -> ?config:Base_quickcheck.Test.Config.t
-    (** default is [Base_quickcheck.Test.default_config] *)
+         (** default is [Base_quickcheck.Test.default_config] *)
     -> ?cr:CR.t (** default is [CR] *)
     -> ?hide_positions:bool (** default is [false] when [cr=CR], [true] otherwise *)
     -> (module With_quickcheck_and_compare)
@@ -464,7 +463,7 @@ module type Expect_test_helpers_base = sig
   val test_equal
     :  Source_code_position.t
     -> ?config:Base_quickcheck.Test.Config.t
-    (** default is [Base_quickcheck.Test.default_config] *)
+         (** default is [Base_quickcheck.Test.default_config] *)
     -> ?cr:CR.t (** default is [CR] *)
     -> ?hide_positions:bool (** default is [false] when [cr=CR], [true] otherwise *)
     -> (module With_quickcheck_and_equal)
@@ -476,7 +475,7 @@ module type Expect_test_helpers_base = sig
   val test_compare_and_equal
     :  Source_code_position.t
     -> ?config:Base_quickcheck.Test.Config.t
-    (** default is [Base_quickcheck.Test.default_config] *)
+         (** default is [Base_quickcheck.Test.default_config] *)
     -> ?cr:CR.t (** default is [CR] *)
     -> ?hide_positions:bool (** default is [false] when [cr=CR], [true] otherwise *)
     -> (module With_quickcheck_and_compare_and_equal)

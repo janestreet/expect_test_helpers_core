@@ -64,8 +64,8 @@ module Sexp_style = struct
 end
 
 module Phys_equal (M : sig
-    type t [@@deriving sexp_of]
-  end) =
+  type t [@@deriving sexp_of]
+end) =
 struct
   type t = M.t [@@deriving sexp_of]
 
@@ -86,15 +86,15 @@ let hide_positions_in_string =
             doesn't implement back-references, precluding a simple substitution.  Instead,
             we provide a length of matched data to copy into the output, effectively acting
             like a back-reference in this special case. *)
-        "[a-zA-z]:[0-9]+:[0-9]+", 1, ":LINE:COL"
-      ; "line [0-9]+:", 0, "line LINE:"
-      ; "line [0-9]+, characters [0-9]+-[0-9]+", 0, "line LINE, characters C1-C2"
-      ]
-        |> List.map ~f:(fun (pattern, prefix_len, expansion) ->
-          let rex = Re.regexp pattern in
-          fun string ->
-            Re.substitute ~rex string ~subst:(fun orig ->
-              String.concat [ String.prefix orig prefix_len; expansion ])))
+         "[a-zA-z]:[0-9]+:[0-9]+", 1, ":LINE:COL"
+       ; "line [0-9]+:", 0, "line LINE:"
+       ; "line [0-9]+, characters [0-9]+-[0-9]+", 0, "line LINE, characters C1-C2"
+       ]
+       |> List.map ~f:(fun (pattern, prefix_len, expansion) ->
+            let rex = Re.regexp pattern in
+            fun string ->
+              Re.substitute ~rex string ~subst:(fun orig ->
+                String.concat [ String.prefix orig prefix_len; expansion ])))
   in
   fun string ->
     List.fold (force expanders) ~init:string ~f:(fun ac expander -> expander ac)
@@ -162,7 +162,7 @@ let remove_backtraces =
         ; "Raised by primitive operation at "
         ; "Called from "
         ]
-      (* based on [monitor.ml] in async_kernel *)
+        (* based on [monitor.ml] in async_kernel *)
       ; [ "Caught by monitor " ]
       ]
   in
@@ -179,10 +179,10 @@ let print_s ?hide_positions sexp = print_string (sexp_to_string ?hide_positions 
 let on_print_cr = ref (fun string -> print_endline string)
 
 let print_cr_with_optional_message
-      ?(cr = CR.CR)
-      ?(hide_positions = CR.hide_unstable_output cr)
-      here
-      optional_message
+  ?(cr = CR.CR)
+  ?(hide_positions = CR.hide_unstable_output cr)
+  here
+  optional_message
   =
   assert_am_running_expect_test here;
   match cr with
@@ -212,15 +212,15 @@ let require ?cr ?hide_positions ?if_false_then_print_s here bool =
 ;;
 
 let require_equal
-      (type a)
-      ?cr
-      ?hide_positions
-      ?if_false_then_print_s
-      ?(message = "values are not equal")
-      here
-      (module M : With_equal with type t = a)
-      x
-      y
+  (type a)
+  ?cr
+  ?hide_positions
+  ?if_false_then_print_s
+  ?(message = "values are not equal")
+  here
+  (module M : With_equal with type t = a)
+  x
+  y
   =
   require
     ?cr
@@ -237,15 +237,15 @@ let require_equal
 ;;
 
 let require_not_equal
-      (type a)
-      ?cr
-      ?hide_positions
-      ?if_false_then_print_s
-      ?(message = "values are equal")
-      here
-      (module M : With_equal with type t = a)
-      x
-      y
+  (type a)
+  ?cr
+  ?hide_positions
+  ?if_false_then_print_s
+  ?(message = "values are equal")
+  here
+  (module M : With_equal with type t = a)
+  x
+  y
   =
   require
     ?cr
@@ -262,14 +262,14 @@ let require_not_equal
 ;;
 
 let require_compare_equal
-      (type a)
-      ?cr
-      ?hide_positions
-      ?message
-      here
-      (module M : With_compare with type t = a)
-      x
-      y
+  (type a)
+  ?cr
+  ?hide_positions
+  ?message
+  here
+  (module M : With_compare with type t = a)
+  x
+  y
   =
   require_equal
     ?cr
@@ -286,14 +286,14 @@ let require_compare_equal
 ;;
 
 let require_compare_not_equal
-      (type a)
-      ?cr
-      ?hide_positions
-      ?message
-      here
-      (module M : With_compare with type t = a)
-      x
-      y
+  (type a)
+  ?cr
+  ?hide_positions
+  ?message
+  here
+  (module M : With_compare with type t = a)
+  x
+  y
   =
   require_not_equal
     ?cr
@@ -310,13 +310,13 @@ let require_compare_not_equal
 ;;
 
 let require_sets_are_equal
-      (type elt)
-      ?cr
-      ?hide_positions
-      ?(names = "first", "second")
-      here
-      first
-      second
+  (type elt)
+  ?cr
+  ?hide_positions
+  ?(names = "first", "second")
+  here
+  first
+  second
   =
   let module Elt = struct
     type t = elt
@@ -381,14 +381,14 @@ let require_does_raise ?cr ?(hide_positions = false) ?show_backtrace here f =
 ;;
 
 let require_first_gen
-      (type first second)
-      ?cr
-      ?hide_positions
-      ?(print_first : (first -> Sexp.t) option)
-      ~message
-      here
-      (sexp_of_second : second -> Sexp.t)
-      (either : (first, second) Either.t)
+  (type first second)
+  ?cr
+  ?hide_positions
+  ?(print_first : (first -> Sexp.t) option)
+  ~message
+  here
+  (sexp_of_second : second -> Sexp.t)
+  (either : (first, second) Either.t)
   =
   match either with
   | First first ->
@@ -473,13 +473,13 @@ let require_error ?cr ?hide_positions ?(print_error = false) here sexp_of_ok res
 ;;
 
 let print_and_check_round_trip
-      (type a)
-      ?cr
-      ?hide_positions
-      here
-      (module T : With_equal with type t = a)
-      reprs
-      examples
+  (type a)
+  ?cr
+  ?hide_positions
+  here
+  (module T : With_equal with type t = a)
+  reprs
+  examples
   =
   require_does_not_raise ?cr ?hide_positions here (fun () ->
     let tag_of name =
@@ -525,12 +525,12 @@ let print_and_check_round_trip
 ;;
 
 let print_and_check_stringable
-      (type a)
-      ?cr
-      ?hide_positions
-      here
-      (module T : With_stringable with type t = a)
-      list
+  (type a)
+  ?cr
+  ?hide_positions
+  here
+  (module T : With_stringable with type t = a)
+  list
   =
   let module T = struct
     include T
@@ -551,12 +551,12 @@ let print_and_check_stringable
 ;;
 
 let print_and_check_sexpable
-      (type a)
-      ?cr
-      ?hide_positions
-      here
-      (module T : With_sexpable with type t = a)
-      list
+  (type a)
+  ?cr
+  ?hide_positions
+  here
+  (module T : With_sexpable with type t = a)
+  list
   =
   let module Conv = struct
     type t = T.t
@@ -579,14 +579,14 @@ let show_raise (type a) ?hide_positions ?show_backtrace (f : unit -> a) =
 ;;
 
 let quickcheck_m
-      (type a)
-      here
-      ?config
-      ?cr
-      ?examples
-      ?hide_positions
-      (module M : Base_quickcheck.Test.S with type t = a)
-      ~f
+  (type a)
+  here
+  ?config
+  ?cr
+  ?examples
+  ?hide_positions
+  (module M : Base_quickcheck.Test.S with type t = a)
+  ~f
   =
   Base_quickcheck.Test.result
     ?config
@@ -600,24 +600,24 @@ let quickcheck_m
         require_does_not_raise here ?cr ?hide_positions (fun () -> f elt));
       if Queue.is_empty crs then Ok () else Error (Queue.to_list crs))
   |> Result.iter_error ~f:(fun (input, output) ->
-    print_s [%message "quickcheck: test failed" (input : M.t)];
-    List.iter output ~f:print_endline)
+       print_s [%message "quickcheck: test failed" (input : M.t)];
+       List.iter output ~f:print_endline)
 ;;
 
 let quickcheck
-      (type a)
-      here
-      ?cr
-      ?hide_positions
-      ?(seed = Base_quickcheck.Test.default_config.seed)
-      ?(sizes = Base_quickcheck.Test.default_config.sizes)
-      ?(trials = Base_quickcheck.Test.default_config.test_count)
-      ?(shrinker = Base_quickcheck.Shrinker.atomic)
-      ?(shrink_attempts = Base_quickcheck.Test.default_config.shrink_count)
-      ?examples
-      ~sexp_of
-      ~f
-      quickcheck_generator
+  (type a)
+  here
+  ?cr
+  ?hide_positions
+  ?(seed = Base_quickcheck.Test.default_config.seed)
+  ?(sizes = Base_quickcheck.Test.default_config.sizes)
+  ?(trials = Base_quickcheck.Test.default_config.test_count)
+  ?(shrinker = Base_quickcheck.Shrinker.atomic)
+  ?(shrink_attempts = Base_quickcheck.Test.default_config.shrink_count)
+  ?examples
+  ~sexp_of
+  ~f
+  quickcheck_generator
   =
   quickcheck_m
     here
@@ -778,11 +778,11 @@ let test_equal here ?config ?cr ?hide_positions (module M : With_quickcheck_and_
 ;;
 
 let test_compare_and_equal
-      here
-      ?config
-      ?cr
-      ?hide_positions
-      (module M : With_quickcheck_and_compare_and_equal)
+  here
+  ?config
+  ?cr
+  ?hide_positions
+  (module M : With_quickcheck_and_compare_and_equal)
   =
   test_compare here ?config ?cr ?hide_positions (module M);
   test_equal here ?config ?cr ?hide_positions (module M);
