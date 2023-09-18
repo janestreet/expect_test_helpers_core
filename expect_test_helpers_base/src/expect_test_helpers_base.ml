@@ -124,12 +124,11 @@ let rec replace_s (sexp : Sexp.t) ~pattern ~with_ : Sexp.t =
   | List list -> List (List.map list ~f:(replace_s ~pattern ~with_))
 ;;
 
-let expect_test_output here =
-  Expect_test_collector.save_and_return_output
-    (Expect_test_common.File.Location.of_source_code_position here)
+let expect_test_output (here : Lexing.position) =
+  Ppx_expect_runtime.For_external.read_current_test_output_exn ~here
 ;;
 
-let am_running_expect_test = Expect_test_collector.am_running_expect_test
+let am_running_expect_test = Ppx_expect_runtime.For_external.am_running_expect_test
 
 let assert_am_running_expect_test here =
   if am_running_expect_test ()
