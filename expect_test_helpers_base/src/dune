@@ -1,4 +1,6 @@
-(library (name expect_test_helpers_base)
+(library
+ (name expect_test_helpers_base)
  (public_name expect_test_helpers_core.expect_test_helpers_base)
  (libraries base base_quickcheck re sexp_pretty stdio)
- (preprocess (pps ppx_jane)))
+ (preprocess
+  (pps ppx_jane)))

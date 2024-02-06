@@ -270,7 +270,7 @@ module type Expect_test_helpers_base = sig
     -> ?hide_positions:bool (** default is [false] when [cr=CR], [true] otherwise *)
     -> ?show_backtrace:bool (** default is [false] *)
     -> Source_code_position.t
-    -> ((unit -> unit)[@local])
+    -> (unit -> unit)
     -> unit
 
   (** [require_does_raise] is like [show_raise], but additionally prints a CR if the
@@ -280,7 +280,7 @@ module type Expect_test_helpers_base = sig
     -> ?hide_positions:bool (** default is [false] *)
     -> ?show_backtrace:bool (** default is [false] *)
     -> Source_code_position.t
-    -> ((unit -> _)[@local])
+    -> (unit -> _)
     -> unit
 
   (** [require_some here option] is like [require here (is_some option)], with improved
