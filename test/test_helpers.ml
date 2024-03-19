@@ -5,8 +5,7 @@ let%expect_test "[print_and_check_stable_type] shows [Shape.Digest] even for emp
                  examples"
   =
   print_and_check_stable_type [%here] (module Int) [];
-  [%expect {|
-    (bin_shape_digest 698cfa4093fe5e51523842d37b92aeac) |}]
+  [%expect {| (bin_shape_digest 698cfa4093fe5e51523842d37b92aeac) |}]
 ;;
 
 let%expect_test "[print_and_check_stable_type]" =
@@ -19,7 +18,8 @@ let%expect_test "[print_and_check_stable_type]" =
     ((sexp   21)
      (bin_io "\021"))
     ((sexp   1073741823)
-     (bin_io "\253\255\255\255?")) |}]
+     (bin_io "\253\255\255\255?"))
+    |}]
 ;;
 
 let%expect_test "[print_and_check_stable_type] with broken round-trip" =
@@ -67,7 +67,8 @@ let%expect_test "[print_and_check_stable_type] with broken round-trip" =
     ("bin-io serialization failed to round-trip"
      (original         23)
      (bin_io           "\00223")
-     (bin_io_roundtrip 42)) |}]
+     (bin_io_roundtrip 42))
+    |}]
 ;;
 
 let%expect_test "[print_and_check_stable_type] with exceeded max-length" =
@@ -89,7 +90,8 @@ let%expect_test "[print_and_check_stable_type] with exceeded max-length" =
      (original           1073741823)
      (bin_io             "\253\255\255\255?")
      (bin_io_length      5)
-     (max_binable_length 1)) |}]
+     (max_binable_length 1))
+    |}]
 ;;
 
 let%expect_test "[print_and_check_stable_type] with comparison that raises" =
@@ -109,7 +111,8 @@ let%expect_test "[print_and_check_stable_type] with comparison that raises" =
     ("unexpectedly raised" (
       compare
       (x 1)
-      (y 1))) |}]
+      (y 1)))
+    |}]
 ;;
 
 let%expect_test "[print_s] bug, apparently" =
@@ -121,7 +124,8 @@ let%expect_test "[print_s] bug, apparently" =
     ("sets are not equal"
       (first (1 2))
       (second                       (2))
-      ("in first but not in second" (1))) |}]
+      ("in first but not in second" (1)))
+    |}]
 ;;
 
 let%expect_test "[require_no_allocation] ignores non-allocating functions" =
@@ -142,7 +146,8 @@ let%expect_test ("[require_no_allocation] shows breach and expected, but does no
   [%expect
     {|
     (* require-failed: lib/expect_test_helpers/core/test/test_helpers.ml:LINE:COL. *)
-    ("allocation exceeded limit" (allocation_limit (Minor_words 0))) |}]
+    ("allocation exceeded limit" (allocation_limit (Minor_words 0)))
+    |}]
 ;;
 
 let%expect_test ("[require_allocation_does_not_exceed] shows breach but not allocation" [@tags
@@ -158,7 +163,8 @@ let%expect_test ("[require_allocation_does_not_exceed] shows breach but not allo
   [%expect
     {|
     (* require-failed: lib/expect_test_helpers/core/test/test_helpers.ml:LINE:COL. *)
-    ("allocation exceeded limit" (allocation_limit (Minor_words 1))) |}]
+    ("allocation exceeded limit" (allocation_limit (Minor_words 1)))
+    |}]
 ;;
 
 let%expect_test "[print_and_check_container_sexps] success" =
@@ -174,7 +180,8 @@ let%expect_test "[print_and_check_container_sexps] success" =
     (Table (
       (1   0)
       (10  1)
-      (100 2))) |}]
+      (100 2)))
+    |}]
 ;;
 
 let%expect_test "[print_and_check_container_sexps] failure" =
@@ -226,7 +233,8 @@ let%expect_test "[print_and_check_container_sexps] failure" =
      (sorted_alist_sexp (
        (0x1  0)
        (0xa  1)
-       (0x64 2)))) |}]
+       (0x64 2))))
+    |}]
 ;;
 
 let%expect_test "remove_time_span" =
