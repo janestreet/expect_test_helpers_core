@@ -2,7 +2,7 @@ open! Base
 open! Expect_test_helpers_core
 module Empty = struct end
 
-let () = print_and_check_stable_type [%here] ()
+let () = print_and_check_stable_type ()
 
 [%%expect
   {|
@@ -11,16 +11,16 @@ Error: This expression should not be a unit literal, the expected type is
        (module Core.Stable_without_comparator with type t = 'a)
 |}]
 
-let () = print_and_check_stable_int63able_type [%here] ()
+let () = print_and_check_stable_int63able_type ()
 
 [%%expect
   {|
 Line _, characters _-_:
 Error: This expression should not be a unit literal, the expected type is
-       (module Core.Stable_int63able with type t = 'a)
+       (module Core.Stable_int63able_without_comparator with type t = 'a)
 |}]
 
-let () = print_and_check_container_sexps [%here] ()
+let () = print_and_check_container_sexps ()
 
 [%%expect
   {|

@@ -27,10 +27,10 @@ module type With_comparable = sig
 end
 
 module Comparable_satisfies_with_comparable (M : sig
-  type t [@@deriving sexp_of]
+    type t [@@deriving sexp_of]
 
-  include Comparable.S with type t := t
-end) : With_comparable =
+    include Comparable.S with type t := t
+  end) : With_comparable =
   M
 
 module type With_hashable = sig
@@ -51,10 +51,10 @@ module type With_hashable = sig
 end
 
 module Hashable_satisfies_with_hashable (M : sig
-  type t [@@deriving sexp_of]
+    type t [@@deriving sexp_of]
 
-  include Hashable.S with type t := t
-end) : With_hashable =
+    include Hashable.S with type t := t
+  end) : With_hashable =
   M
 
 module type With_containers = sig
@@ -86,7 +86,7 @@ module type Expect_test_helpers_core = sig
     :  ?cr:CR.t (** default is [CR] *)
     -> ?hide_positions:bool (** default is [false] when [cr=CR], [true] otherwise *)
     -> ?max_binable_length:int (** default is [Int.max_value] *)
-    -> Source_code_position.t
+    -> ?here:Stdlib.Lexing.position
     -> (module Stable_without_comparator with type t = 'a)
     -> 'a list
     -> unit
@@ -97,8 +97,8 @@ module type Expect_test_helpers_core = sig
     :  ?cr:CR.t (** default is [CR] *)
     -> ?hide_positions:bool (** default is [false] when [cr=CR], [true] otherwise *)
     -> ?max_binable_length:int (** default is [Int.max_value] *)
-    -> Source_code_position.t
-    -> (module Stable_int63able with type t = 'a)
+    -> ?here:Stdlib.Lexing.position
+    -> (module Stable_int63able_without_comparator with type t = 'a)
     -> 'a list
     -> unit
 
@@ -110,7 +110,7 @@ module type Expect_test_helpers_core = sig
   val print_and_check_container_sexps
     :  ?cr:CR.t (** default is [CR] *)
     -> ?hide_positions:bool (** default is [false] when [cr=CR], [true] otherwise *)
-    -> Source_code_position.t
+    -> ?here:Stdlib.Lexing.position
     -> (module With_containers with type t = 'a)
     -> 'a list
     -> unit
@@ -120,7 +120,7 @@ module type Expect_test_helpers_core = sig
   val print_and_check_comparable_sexps
     :  ?cr:CR.t (** default is [CR] *)
     -> ?hide_positions:bool (** default is [false] when [cr=CR], [true] otherwise *)
-    -> Source_code_position.t
+    -> ?here:Stdlib.Lexing.position
     -> (module With_comparable with type t = 'a)
     -> 'a list
     -> unit
@@ -130,7 +130,7 @@ module type Expect_test_helpers_core = sig
   val print_and_check_hashable_sexps
     :  ?cr:CR.t (** default is [CR] *)
     -> ?hide_positions:bool (** default is [false] when [cr=CR], [true] otherwise *)
-    -> Source_code_position.t
+    -> ?here:Stdlib.Lexing.position
     -> (module With_hashable with type t = 'a)
     -> 'a list
     -> unit
@@ -174,7 +174,16 @@ module type Expect_test_helpers_core = sig
     :  ?print_limit:int (** default is [1_000] *)
     -> ?hide_positions:bool (** default is [false] *)
     -> Allocation_limit.t
-    -> Source_code_position.t
+    -> ?here:Stdlib.Lexing.position
+    -> (unit -> 'a)
+    -> 'a
+
+  (** Like [require_allocation_does_not_exceed], for functions producing local values. *)
+  val require_allocation_does_not_exceed_local
+    :  ?print_limit:int (** default is [1_000] *)
+    -> ?hide_positions:bool (** default is [false] *)
+    -> Allocation_limit.t
+    -> ?here:Stdlib.Lexing.position
     -> (unit -> 'a)
     -> 'a
 
@@ -185,7 +194,15 @@ module type Expect_test_helpers_core = sig
   val require_no_allocation
     :  ?print_limit:int
     -> ?hide_positions:bool (** default is [false] *)
-    -> Source_code_position.t
+    -> ?here:Stdlib.Lexing.position
+    -> (unit -> 'a)
+    -> 'a
+
+  (** Like [require_no_allocation], for functions producing local values. *)
+  val require_no_allocation_local
+    :  ?print_limit:int
+    -> ?hide_positions:bool (** default is [false] *)
+    -> ?here:Stdlib.Lexing.position
     -> (unit -> 'a)
     -> 'a
 
@@ -196,12 +213,12 @@ module type Expect_test_helpers_core = sig
       interfere with other [Private] modules or create problems due to multiple
       definitions of [Private]. *)
   module Expect_test_helpers_core_private : sig
-    val require_allocation_does_not_exceed
+    val require_allocation_does_not_exceed_local
       :  ?cr:CR.t
       -> ?hide_positions:bool
       -> ?print_limit:int
       -> Allocation_limit.t
-      -> Source_code_position.t
+      -> ?here:Stdlib.Lexing.position
       -> (unit -> 'a)
       -> 'a
   end

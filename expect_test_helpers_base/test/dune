@@ -1,5 +1,5 @@
 (library
  (name expect_test_helpers_base_test)
- (libraries base expect_test_helpers_base stdio)
+ (libraries base expect_test_helpers_base parsexp stdio)
  (preprocess
   (pps ppx_jane)))

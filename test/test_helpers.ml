@@ -4,12 +4,12 @@ open! Import
 let%expect_test "[print_and_check_stable_type] shows [Shape.Digest] even for empty \
                  examples"
   =
-  print_and_check_stable_type [%here] (module Int) [];
+  print_and_check_stable_type (module Int) [];
   [%expect {| (bin_shape_digest 698cfa4093fe5e51523842d37b92aeac) |}]
 ;;
 
 let%expect_test "[print_and_check_stable_type]" =
-  print_and_check_stable_type [%here] (module Int) [ 0; 21; Int.max_value_30_bits ];
+  print_and_check_stable_type (module Int) [ 0; 21; Int.max_value_30_bits ];
   [%expect
     {|
     (bin_shape_digest 698cfa4093fe5e51523842d37b92aeac)
@@ -50,7 +50,7 @@ let%expect_test "[print_and_check_stable_type] with broken round-trip" =
         end)
   end
   in
-  print_and_check_stable_type [%here] ~cr:Comment (module Broken) [ 42; 23 ];
+  print_and_check_stable_type ~cr:Comment (module Broken) [ 42; 23 ];
   [%expect
     {|
     (bin_shape_digest d9a8da25d5656b016fb4dbdc2e4197fb)
@@ -73,24 +73,40 @@ let%expect_test "[print_and_check_stable_type] with broken round-trip" =
 
 let%expect_test "[print_and_check_stable_type] with exceeded max-length" =
   print_and_check_stable_type
-    [%here]
     ~cr:Comment
-    (module Int)
-    [ 0; Int.max_value_30_bits ]
+    (module struct
+      include Int
+
+      let bin_write_t buf ~pos t =
+        if t = -1 then raise_s [%message "demonstrating exception behavior"];
+        bin_write_t buf ~pos t
+      ;;
+    end)
+    [ 0; Int.max_value_30_bits; -1; lnot Int.max_value_30_bits ]
     ~max_binable_length:1;
   [%expect
     {|
     (bin_shape_digest 698cfa4093fe5e51523842d37b92aeac)
     ((sexp   0)
      (bin_io "\000"))
-    ((sexp   1073741823)
-     (bin_io "\253\255\255\255?"))
     (* require-failed: lib/expect_test_helpers/core/test/test_helpers.ml:LINE:COL. *)
     ("bin-io serialization exceeds max binable length"
      (original           1073741823)
      (bin_io             "\253\255\255\255?")
      (bin_io_length      5)
      (max_binable_length 1))
+    ((sexp   1073741823)
+     (bin_io "\253\255\255\255?"))
+    (* require-failed: lib/expect_test_helpers/core/test/test_helpers.ml:LINE:COL. *)
+    ("unexpectedly raised" "demonstrating exception behavior")
+    (* require-failed: lib/expect_test_helpers/core/test/test_helpers.ml:LINE:COL. *)
+    ("bin-io serialization exceeds max binable length"
+     (original           -1073741824)
+     (bin_io             "\253\000\000\000\192")
+     (bin_io_length      5)
+     (max_binable_length 1))
+    ((sexp   -1073741824)
+     (bin_io "\253\000\000\000\192"))
     |}]
 ;;
 
@@ -101,7 +117,7 @@ let%expect_test "[print_and_check_stable_type] with comparison that raises" =
     let compare x y = raise_s [%message "compare" (x : int) (y : int)]
   end
   in
-  print_and_check_stable_type [%here] ~cr:Comment (module Broken) [ 1; 2; 3 ];
+  print_and_check_stable_type ~cr:Comment (module Broken) [ 1; 2; 3 ];
   [%expect
     {|
     (bin_shape_digest 698cfa4093fe5e51523842d37b92aeac)
@@ -112,6 +128,20 @@ let%expect_test "[print_and_check_stable_type] with comparison that raises" =
       compare
       (x 1)
       (y 1)))
+    ((sexp   2)
+     (bin_io "\002"))
+    (* require-failed: lib/expect_test_helpers/core/test/test_helpers.ml:LINE:COL. *)
+    ("unexpectedly raised" (
+      compare
+      (x 2)
+      (y 2)))
+    ((sexp   3)
+     (bin_io "\003"))
+    (* require-failed: lib/expect_test_helpers/core/test/test_helpers.ml:LINE:COL. *)
+    ("unexpectedly raised" (
+      compare
+      (x 3)
+      (y 3)))
     |}]
 ;;
 
@@ -129,7 +159,7 @@ let%expect_test "[print_s] bug, apparently" =
 ;;
 
 let%expect_test "[require_no_allocation] ignores non-allocating functions" =
-  require_no_allocation [%here] (fun () -> ());
+  require_no_allocation (fun () -> ());
   [%expect {| |}]
 ;;
 
@@ -137,12 +167,11 @@ let%expect_test ("[require_no_allocation] shows breach and expected, but does no
                   allocation" [@tags "no-js"])
   =
   ignore
-    (Expect_test_helpers_core_private.require_allocation_does_not_exceed
+    (Expect_test_helpers_core_private.require_allocation_does_not_exceed_local
        ~cr:Comment
        (Minor_words 0)
-       [%here]
        (fun () -> (List.map [@inlined never]) [ 1; 2; 3 ] ~f:(fun i -> i + 1))
-      : int list);
+     : int list);
   [%expect
     {|
     (* require-failed: lib/expect_test_helpers/core/test/test_helpers.ml:LINE:COL. *)
@@ -154,12 +183,11 @@ let%expect_test ("[require_allocation_does_not_exceed] shows breach but not allo
                                                                                           "no-js"])
   =
   ignore
-    (Expect_test_helpers_core_private.require_allocation_does_not_exceed
+    (Expect_test_helpers_core_private.require_allocation_does_not_exceed_local
        ~cr:Comment
        (Minor_words 1)
-       [%here]
        (fun () -> (List.map [@inlined never]) [ 1; 2; 3 ] ~f:(fun i -> i + 1))
-      : int list);
+     : int list);
   [%expect
     {|
     (* require-failed: lib/expect_test_helpers/core/test/test_helpers.ml:LINE:COL. *)
@@ -168,7 +196,7 @@ let%expect_test ("[require_allocation_does_not_exceed] shows breach but not allo
 ;;
 
 let%expect_test "[print_and_check_container_sexps] success" =
-  print_and_check_container_sexps [%here] (module Int) [ 1; 10; 100 ];
+  print_and_check_container_sexps (module Int) [ 1; 10; 100 ];
   [%expect
     {|
     (Set (1 10 100))
@@ -187,7 +215,6 @@ let%expect_test "[print_and_check_container_sexps] success" =
 let%expect_test "[print_and_check_container_sexps] failure" =
   print_and_check_container_sexps
     ~cr:Comment
-    [%here]
     (module struct
       include Int
 

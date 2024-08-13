@@ -1,7 +1,7 @@
 open! Base
 open! Expect_test_helpers_base
 
-let () = require_equal [%here] ()
+let () = require_equal ()
 
 [%%expect
   {|
@@ -10,7 +10,7 @@ Error: This expression should not be a unit literal, the expected type is
        (module Expect_test_helpers_base.With_equal with type t = 'a)
 |}]
 
-let () = require_compare_equal [%here] ()
+let () = require_compare_equal ()
 
 [%%expect
   {|
