@@ -29,7 +29,7 @@ let print_and_check_stable_internal
   ?cr
   ?hide_positions
   ?max_binable_length
-  ?(here = Stdlib.Lexing.dummy_pos)
+  ~(here : [%call_pos])
   (module M : Stable_without_comparator with type t = a)
   (int63able : (module Int63able with type t = a) option)
   list
@@ -114,7 +114,7 @@ let print_and_check_stable_type
   ?cr
   ?hide_positions
   ?max_binable_length
-  ?(here = Stdlib.Lexing.dummy_pos)
+  ~(here : [%call_pos])
   (module M : Stable_without_comparator with type t = a)
   list
   =
@@ -133,7 +133,7 @@ let print_and_check_stable_int63able_type
   ?cr
   ?hide_positions
   ?max_binable_length
-  ?(here = Stdlib.Lexing.dummy_pos)
+  ~(here : [%call_pos])
   (module M : Stable_int63able_without_comparator with type t = a)
   list
   =
@@ -152,9 +152,9 @@ let require_allocation_does_not_exceed_local_private
   ?hide_positions
   ?(print_limit = 1_000)
   allocation_limit
-  ?(here = Stdlib.Lexing.dummy_pos)
+  ~(here : [%call_pos])
   f
-  =
+  = exclave_
   let ( x
       , { Gc.For_testing.Allocation_report.major_words_allocated; minor_words_allocated }
       , allocs )
@@ -207,9 +207,9 @@ let require_allocation_does_not_exceed_local
   ?print_limit
   ?hide_positions
   allocation_limit
-  ?(here = Stdlib.Lexing.dummy_pos)
+  ~(here : [%call_pos])
   f
-  =
+  = exclave_
   require_allocation_does_not_exceed_local_private
     ?print_limit
     ?hide_positions
@@ -222,7 +222,7 @@ let require_allocation_does_not_exceed
   ?print_limit
   ?hide_positions
   limit
-  ?(here = Stdlib.Lexing.dummy_pos)
+  ~(here : [%call_pos])
   f
   =
   (require_allocation_does_not_exceed_local
@@ -234,12 +234,8 @@ let require_allocation_does_not_exceed
     .global
 ;;
 
-let require_no_allocation_local
-  ?print_limit
-  ?hide_positions
-  ?(here = Stdlib.Lexing.dummy_pos)
-  f
-  =
+let require_no_allocation_local ?print_limit ?hide_positions ~(here : [%call_pos]) f
+  = exclave_
   require_allocation_does_not_exceed_local
     ?print_limit
     ?hide_positions
@@ -248,8 +244,7 @@ let require_no_allocation_local
     f
 ;;
 
-let require_no_allocation ?print_limit ?hide_positions ?(here = Stdlib.Lexing.dummy_pos) f
-  =
+let require_no_allocation ?print_limit ?hide_positions ~(here : [%call_pos]) f =
   (require_no_allocation_local ?print_limit ?hide_positions ~here (fun () ->
      { global = f () }))
     .global
@@ -259,7 +254,7 @@ let print_and_check_comparable_sexps
   (type a)
   ?cr
   ?hide_positions
-  ?(here = Stdlib.Lexing.dummy_pos)
+  ~(here : [%call_pos])
   (module M : With_comparable with type t = a)
   list
   =
@@ -303,7 +298,7 @@ let print_and_check_hashable_sexps
   (type a)
   ?cr
   ?hide_positions
-  ?(here = Stdlib.Lexing.dummy_pos)
+  ~(here : [%call_pos])
   (module M : With_hashable with type t = a)
   list
   =
@@ -347,7 +342,7 @@ let print_and_check_container_sexps
   (type a)
   ?cr
   ?hide_positions
-  ?(here = Stdlib.Lexing.dummy_pos)
+  ~(here : [%call_pos])
   m
   list
   =

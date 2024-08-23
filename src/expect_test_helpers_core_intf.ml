@@ -86,7 +86,7 @@ module type Expect_test_helpers_core = sig
     :  ?cr:CR.t (** default is [CR] *)
     -> ?hide_positions:bool (** default is [false] when [cr=CR], [true] otherwise *)
     -> ?max_binable_length:int (** default is [Int.max_value] *)
-    -> ?here:Stdlib.Lexing.position
+    -> here:[%call_pos]
     -> (module Stable_without_comparator with type t = 'a)
     -> 'a list
     -> unit
@@ -97,7 +97,7 @@ module type Expect_test_helpers_core = sig
     :  ?cr:CR.t (** default is [CR] *)
     -> ?hide_positions:bool (** default is [false] when [cr=CR], [true] otherwise *)
     -> ?max_binable_length:int (** default is [Int.max_value] *)
-    -> ?here:Stdlib.Lexing.position
+    -> here:[%call_pos]
     -> (module Stable_int63able_without_comparator with type t = 'a)
     -> 'a list
     -> unit
@@ -110,7 +110,7 @@ module type Expect_test_helpers_core = sig
   val print_and_check_container_sexps
     :  ?cr:CR.t (** default is [CR] *)
     -> ?hide_positions:bool (** default is [false] when [cr=CR], [true] otherwise *)
-    -> ?here:Stdlib.Lexing.position
+    -> here:[%call_pos]
     -> (module With_containers with type t = 'a)
     -> 'a list
     -> unit
@@ -120,7 +120,7 @@ module type Expect_test_helpers_core = sig
   val print_and_check_comparable_sexps
     :  ?cr:CR.t (** default is [CR] *)
     -> ?hide_positions:bool (** default is [false] when [cr=CR], [true] otherwise *)
-    -> ?here:Stdlib.Lexing.position
+    -> here:[%call_pos]
     -> (module With_comparable with type t = 'a)
     -> 'a list
     -> unit
@@ -130,7 +130,7 @@ module type Expect_test_helpers_core = sig
   val print_and_check_hashable_sexps
     :  ?cr:CR.t (** default is [CR] *)
     -> ?hide_positions:bool (** default is [false] when [cr=CR], [true] otherwise *)
-    -> ?here:Stdlib.Lexing.position
+    -> here:[%call_pos]
     -> (module With_hashable with type t = 'a)
     -> 'a list
     -> unit
@@ -174,8 +174,8 @@ module type Expect_test_helpers_core = sig
     :  ?print_limit:int (** default is [1_000] *)
     -> ?hide_positions:bool (** default is [false] *)
     -> Allocation_limit.t
-    -> ?here:Stdlib.Lexing.position
-    -> (unit -> 'a)
+    -> here:[%call_pos]
+    -> local_ (unit -> 'a)
     -> 'a
 
   (** Like [require_allocation_does_not_exceed], for functions producing local values. *)
@@ -183,9 +183,9 @@ module type Expect_test_helpers_core = sig
     :  ?print_limit:int (** default is [1_000] *)
     -> ?hide_positions:bool (** default is [false] *)
     -> Allocation_limit.t
-    -> ?here:Stdlib.Lexing.position
-    -> (unit -> 'a)
-    -> 'a
+    -> here:[%call_pos]
+    -> local_ (unit -> local_ 'a)
+    -> local_ 'a
 
   (** [require_no_allocation here f] is equivalent to [require_allocation_does_not_exceed
       (Minor_words 0) here f].
@@ -194,17 +194,17 @@ module type Expect_test_helpers_core = sig
   val require_no_allocation
     :  ?print_limit:int
     -> ?hide_positions:bool (** default is [false] *)
-    -> ?here:Stdlib.Lexing.position
-    -> (unit -> 'a)
+    -> here:[%call_pos]
+    -> local_ (unit -> 'a)
     -> 'a
 
   (** Like [require_no_allocation], for functions producing local values. *)
   val require_no_allocation_local
     :  ?print_limit:int
     -> ?hide_positions:bool (** default is [false] *)
-    -> ?here:Stdlib.Lexing.position
-    -> (unit -> 'a)
-    -> 'a
+    -> here:[%call_pos]
+    -> local_ (unit -> local_ 'a)
+    -> local_ 'a
 
   (**/**)
 
@@ -218,8 +218,8 @@ module type Expect_test_helpers_core = sig
       -> ?hide_positions:bool
       -> ?print_limit:int
       -> Allocation_limit.t
-      -> ?here:Stdlib.Lexing.position
-      -> (unit -> 'a)
-      -> 'a
+      -> here:[%call_pos]
+      -> local_ (unit -> local_ 'a)
+      -> local_ 'a
   end
 end

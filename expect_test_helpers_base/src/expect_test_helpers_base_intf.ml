@@ -146,7 +146,7 @@ module type Expect_test_helpers_base = sig
   (** Behaves like [[%expect.output]].
 
       Raises if called when not running an expect test. *)
-  val expect_test_output : ?here:Stdlib.Lexing.position -> unit -> string
+  val expect_test_output : here:[%call_pos] -> unit -> string
 
   (** Raises an error if, in the current test:
       1. Control flow has reached a [[%expect.unreachable]] node or
@@ -156,11 +156,7 @@ module type Expect_test_helpers_base = sig
       An error raised in the above cases begins with [message], if provided.
 
       Also raises if called when not running an expect test. *)
-  val raise_if_output_did_not_match
-    :  ?message:string
-    -> ?here:Stdlib.Lexing.position
-    -> unit
-    -> unit
+  val raise_if_output_did_not_match : ?message:string -> here:[%call_pos] -> unit -> unit
 
   (** Returns [true] if running inside the body of [let%expect_test], or [false]
       otherwise. Use to test whether [expect_test_output] will raise, for example. Unlike
@@ -171,7 +167,7 @@ module type Expect_test_helpers_base = sig
   (** If [am_running_expect_test () = false], raises with an explanatory error message. Do
       not use [require am_running_expect_test], as outside of an expect test that may not
       accomplish anything. *)
-  val assert_am_running_expect_test : ?here:Stdlib.Lexing.position -> unit -> unit
+  val assert_am_running_expect_test : here:[%call_pos] -> unit -> unit
 
   (** [print_cr here message] prints a [CR require-failed], which will appear in
       expect-test output. The CR will appear in the feature owner's [fe todo], thus
@@ -183,7 +179,7 @@ module type Expect_test_helpers_base = sig
   val print_cr
     :  ?cr:CR.t (** default is [CR] *)
     -> ?hide_positions:bool (** default is [false] when [cr=CR], [true] otherwise *)
-    -> ?here:Stdlib.Lexing.position
+    -> here:[%call_pos]
     -> Sexp.t
     -> unit
 
@@ -198,7 +194,7 @@ module type Expect_test_helpers_base = sig
     :  ?cr:CR.t (** default is [CR] *)
     -> ?hide_positions:bool (** default is [false] when [cr=CR], [true] otherwise *)
     -> ?if_false_then_print_s:Sexp.t Lazy.t
-    -> ?here:Stdlib.Lexing.position
+    -> here:[%call_pos]
     -> bool
     -> unit
 
@@ -210,7 +206,7 @@ module type Expect_test_helpers_base = sig
     -> ?hide_positions:bool (** default is [false] when [cr=CR], [true] otherwise *)
     -> ?if_false_then_print_s:Sexp.t Lazy.t
     -> ?message:string
-    -> ?here:Stdlib.Lexing.position
+    -> here:[%call_pos]
     -> (module With_equal with type t = 'a)
     -> 'a
     -> 'a
@@ -222,7 +218,7 @@ module type Expect_test_helpers_base = sig
     :  ?cr:CR.t (** default is [CR]    *)
     -> ?hide_positions:bool (** default is [false] when [cr=CR], [true] otherwise *)
     -> ?message:string
-    -> ?here:Stdlib.Lexing.position
+    -> here:[%call_pos]
     -> (module With_compare with type t = 'a)
     -> 'a
     -> 'a
@@ -234,7 +230,7 @@ module type Expect_test_helpers_base = sig
     -> ?hide_positions:bool (** default is [false] when [cr=CR], [true] otherwise *)
     -> ?if_false_then_print_s:Sexp.t Lazy.t
     -> ?message:string
-    -> ?here:Stdlib.Lexing.position
+    -> here:[%call_pos]
     -> (module With_equal with type t = 'a)
     -> 'a
     -> 'a
@@ -246,7 +242,7 @@ module type Expect_test_helpers_base = sig
     :  ?cr:CR.t (** default is [CR]    *)
     -> ?hide_positions:bool (** default is [false] when [cr=CR], [true] otherwise *)
     -> ?message:string
-    -> ?here:Stdlib.Lexing.position
+    -> here:[%call_pos]
     -> (module With_compare with type t = 'a)
     -> 'a
     -> 'a
@@ -258,7 +254,7 @@ module type Expect_test_helpers_base = sig
     :  ?cr:CR.t (** default is [CR]    *)
     -> ?hide_positions:bool (** default is [false] when [cr=CR], [true] otherwise *)
     -> ?names:string * string (** default is ["first", "second"] *)
-    -> ?here:Stdlib.Lexing.position
+    -> here:[%call_pos]
     -> ('elt, 'cmp) Set.t
     -> ('elt, 'cmp) Set.t
     -> unit
@@ -285,8 +281,8 @@ module type Expect_test_helpers_base = sig
     :  ?cr:CR.t (** default is [CR] *)
     -> ?hide_positions:bool (** default is [false] when [cr=CR], [true] otherwise *)
     -> ?show_backtrace:bool (** default is [false] *)
-    -> ?here:Stdlib.Lexing.position
-    -> (unit -> unit)
+    -> here:[%call_pos]
+    -> local_ (unit -> unit)
     -> unit
 
   (** [require_does_raise] is like [show_raise], but additionally prints a CR if the
@@ -295,8 +291,8 @@ module type Expect_test_helpers_base = sig
     :  ?cr:CR.t (** default is [CR] *)
     -> ?hide_positions:bool (** default is [false] *)
     -> ?show_backtrace:bool (** default is [false] *)
-    -> ?here:Stdlib.Lexing.position
-    -> (unit -> _)
+    -> here:[%call_pos]
+    -> local_ (unit -> _)
     -> unit
 
   (** [require_some here option] is like [require here (is_some option)], with improved
@@ -306,7 +302,7 @@ module type Expect_test_helpers_base = sig
     :  ?cr:CR.t (** default is [CR] *)
     -> ?hide_positions:bool (** default is [false] when [cr=CR], [true] otherwise *)
     -> ?print_some:('some -> Sexp.t)
-    -> ?here:Stdlib.Lexing.position
+    -> here:[%call_pos]
     -> 'some option
     -> unit
 
@@ -316,7 +312,7 @@ module type Expect_test_helpers_base = sig
   val require_none
     :  ?cr:CR.t (** default is [CR] *)
     -> ?hide_positions:bool (** default is [false] when [cr=CR], [true] otherwise *)
-    -> ?here:Stdlib.Lexing.position
+    -> here:[%call_pos]
     -> ('some -> Sexp.t)
     -> 'some option
     -> unit
@@ -328,7 +324,7 @@ module type Expect_test_helpers_base = sig
     :  ?cr:CR.t (** default is [CR] *)
     -> ?hide_positions:bool (** default is [false] when [cr=CR], [true] otherwise *)
     -> ?print_ok:('ok -> Sexp.t)
-    -> ?here:Stdlib.Lexing.position
+    -> here:[%call_pos]
     -> 'ok Or_error.t
     -> unit
 
@@ -339,7 +335,7 @@ module type Expect_test_helpers_base = sig
     :  ?cr:CR.t (** default is [CR] *)
     -> ?hide_positions:bool (** default is [false] when [cr=CR], [true] otherwise *)
     -> ?print_error:bool (** default is [false] *)
-    -> ?here:Stdlib.Lexing.position
+    -> here:[%call_pos]
     -> ('ok -> Sexp.t)
     -> 'ok Or_error.t
     -> unit
@@ -352,7 +348,7 @@ module type Expect_test_helpers_base = sig
     :  ?cr:CR.t (** default is [CR] *)
     -> ?hide_positions:bool (** default is [false] when [cr=CR], [true] otherwise *)
     -> ?print_ok:('ok -> Sexp.t)
-    -> ?here:Stdlib.Lexing.position
+    -> here:[%call_pos]
     -> ('error -> Sexp.t)
     -> ('ok, 'error) Result.t
     -> unit
@@ -365,7 +361,7 @@ module type Expect_test_helpers_base = sig
     :  ?cr:CR.t (** default is [CR] *)
     -> ?hide_positions:bool (** default is [false] when [cr=CR], [true] otherwise *)
     -> ?print_error:('error -> Sexp.t)
-    -> ?here:Stdlib.Lexing.position
+    -> here:[%call_pos]
     -> ('ok -> Sexp.t)
     -> ('ok, 'error) Result.t
     -> unit
@@ -378,7 +374,7 @@ module type Expect_test_helpers_base = sig
     :  ?cr:CR.t (** default is [CR] *)
     -> ?hide_positions:bool (** default is [false] when [cr=CR], [true otherwise] *)
     -> ?print_first:('first -> Sexp.t)
-    -> ?here:Stdlib.Lexing.position
+    -> here:[%call_pos]
     -> ('second -> Sexp.t)
     -> ('first, 'second) Either.t
     -> unit
@@ -391,7 +387,7 @@ module type Expect_test_helpers_base = sig
     :  ?cr:CR.t (** default is [CR] *)
     -> ?hide_positions:bool (** default is [false] when [cr=CR], [true otherwise] *)
     -> ?print_second:('second -> Sexp.t)
-    -> ?here:Stdlib.Lexing.position
+    -> here:[%call_pos]
     -> ('first -> Sexp.t)
     -> ('first, 'second) Either.t
     -> unit
@@ -401,7 +397,7 @@ module type Expect_test_helpers_base = sig
   val print_and_check_stringable
     :  ?cr:CR.t (** default is [CR] *)
     -> ?hide_positions:bool (** default is [false] when [cr=CR], [true otherwise] *)
-    -> ?here:Stdlib.Lexing.position
+    -> here:[%call_pos]
     -> (module With_stringable with type t = 'a)
     -> 'a list
     -> unit
@@ -411,7 +407,7 @@ module type Expect_test_helpers_base = sig
   val print_and_check_sexpable
     :  ?cr:CR.t (** default is [CR] *)
     -> ?hide_positions:bool (** default is [false] when [cr=CR], [true otherwise] *)
-    -> ?here:Stdlib.Lexing.position
+    -> here:[%call_pos]
     -> (module With_sexpable with type t = 'a)
     -> 'a list
     -> unit
@@ -422,7 +418,7 @@ module type Expect_test_helpers_base = sig
   val print_and_check_round_trip
     :  ?cr:CR.t (** default is [CR] *)
     -> ?hide_positions:bool (** default is [false] when [cr=CR], [true otherwise] *)
-    -> ?here:Stdlib.Lexing.position
+    -> here:[%call_pos]
     -> (module With_equal with type t = 'a)
     -> (module With_round_trip with type t = 'a) list
     -> 'a list
@@ -436,7 +432,7 @@ module type Expect_test_helpers_base = sig
       2. [quickcheck] stops after the first iteration that raises or prints a CR, as
       detected by [on_print_cr]. *)
   val quickcheck
-    :  ?here:Stdlib.Lexing.position
+    :  here:[%call_pos]
     -> ?cr:CR.t (** default is [CR] *)
     -> ?hide_positions:bool (** default is [false] when [cr=CR], [true] otherwise *)
     -> ?seed:Quickcheck.Test.Config.Seed.t
@@ -453,7 +449,7 @@ module type Expect_test_helpers_base = sig
   (** [quickcheck_m] is similar to [Base_quickcheck.Test.run]. It stops after the first
       iteration that raises or prints a CR, as detected by [on_print_cr]. *)
   val quickcheck_m
-    :  ?here:Stdlib.Lexing.position
+    :  here:[%call_pos]
     -> ?config:Base_quickcheck.Test.Config.t
          (** default is [Base_quickcheck.Test.default_config] *)
     -> ?cr:CR.t (** default is [CR] *)
@@ -466,7 +462,7 @@ module type Expect_test_helpers_base = sig
   (** [test_compare] uses quickcheck to test that a compare function is reflexive,
       asymmetric, and transitive. *)
   val test_compare
-    :  ?here:Stdlib.Lexing.position
+    :  here:[%call_pos]
     -> ?config:Base_quickcheck.Test.Config.t
          (** default is [Base_quickcheck.Test.default_config] *)
     -> ?cr:CR.t (** default is [CR] *)
@@ -477,7 +473,7 @@ module type Expect_test_helpers_base = sig
   (** [test_equal] uses quickcheck to test that an equal function is reflexive, symmetric,
       and transitive. *)
   val test_equal
-    :  ?here:Stdlib.Lexing.position
+    :  here:[%call_pos]
     -> ?config:Base_quickcheck.Test.Config.t
          (** default is [Base_quickcheck.Test.default_config] *)
     -> ?cr:CR.t (** default is [CR] *)
@@ -489,7 +485,7 @@ module type Expect_test_helpers_base = sig
       satisfy [test_compare] and [test_equal], and that their results are consistent with
       each other. *)
   val test_compare_and_equal
-    :  ?here:Stdlib.Lexing.position
+    :  here:[%call_pos]
     -> ?config:Base_quickcheck.Test.Config.t
          (** default is [Base_quickcheck.Test.default_config] *)
     -> ?cr:CR.t (** default is [CR] *)
