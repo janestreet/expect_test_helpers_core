@@ -11,11 +11,13 @@ module CR = struct
   include CR
 
   let message t here =
-    let cr cr =
+    let cr ?(for_ = "") cr =
       String.concat
         [ "(* "
         ; cr
-        ; " require-failed: "
+        ; " require-failed"
+        ; for_
+        ; ": "
         ; here |> Source_code_position.to_string
         ; ".\n"
         ; "   Do not 'X' this CR; instead make the required property true,\n"
@@ -26,6 +28,7 @@ module CR = struct
     match t with
     | CR -> cr "CR"
     | CR_soon -> cr "CR-soon"
+    | CR_soon_for user -> cr "CR-soon" ~for_:(String.concat [ " for "; user ])
     | CR_someday -> cr "CR-someday"
     | Comment ->
       String.concat
@@ -35,7 +38,7 @@ module CR = struct
 
   let hide_unstable_output = function
     | CR -> false
-    | CR_soon | CR_someday | Comment | Suppress -> true
+    | CR_soon | CR_soon_for _ | CR_someday | Comment | Suppress -> true
   ;;
 end
 
@@ -89,6 +92,9 @@ let hide_positions_in_string =
          "[a-zA-z]:[0-9]+:[0-9]+", 1, ":LINE:COL"
        ; "line [0-9]+:", 0, "line LINE:"
        ; "line [0-9]+, characters [0-9]+-[0-9]+", 0, "line LINE, characters C1-C2"
+       ; ( "lines [0-9]+-[0-9]+, characters [0-9]+-[0-9]+"
+         , 0
+         , "lines LINES, characters C1-C2" )
        ]
        |> List.map ~f:(fun (pattern, prefix_len, expansion) ->
          let rex = Re.regexp pattern in

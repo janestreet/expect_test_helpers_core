@@ -211,6 +211,13 @@ let%expect_test "[require false] on non-comment [~cr] values includes instructio
     |}]
 ;;
 
+let%expect_test "[require false ~cr:(CR_soon_for _)] prints addressee" =
+  require false ~cr:(CR_soon_for "nobody");
+  [%expect
+    {|
+    |}]
+;;
+
 let%expect_test "[require_equal] success" =
   require_equal (module Int) ~cr:Comment 1 1;
   [%expect {| |}]
@@ -837,41 +844,39 @@ let%expect_test "Phys_equal" =
     |}]
 ;;
 
-let%test_module _ =
-  (module struct
-    let%expect_test "[%expect.output]" =
-      let output =
-        print_endline "This is a sentence.";
-        [%expect.output]
-      in
-      [%expect {| |}];
-      print_string output;
-      [%expect {| This is a sentence. |}]
-    ;;
+module%test _ = struct
+  let%expect_test "[%expect.output]" =
+    let output =
+      print_endline "This is a sentence.";
+      [%expect.output]
+    in
+    [%expect {| |}];
+    print_string output;
+    [%expect {| This is a sentence. |}]
+  ;;
 
-    let%expect_test "expect_test_output" =
-      let output =
-        print_endline "This is a sentence.";
-        expect_test_output ()
-      in
-      [%expect {| |}];
-      print_string output;
-      [%expect {| This is a sentence. |}]
-    ;;
+  let%expect_test "expect_test_output" =
+    let output =
+      print_endline "This is a sentence.";
+      expect_test_output ()
+    in
+    [%expect {| |}];
+    print_string output;
+    [%expect {| This is a sentence. |}]
+  ;;
 
-    let%expect_test "expect_test_output with source location from different file" =
-      let output =
-        print_endline "This is a sentence.";
-        expect_test_output
-          ~here:{ pos_fname = "__nonexistent__"; pos_lnum = 1; pos_bol = 0; pos_cnum = 0 }
-          ()
-      in
-      [%expect {| |}];
-      print_string output;
-      [%expect {| This is a sentence. |}]
-    ;;
-  end)
-;;
+  let%expect_test "expect_test_output with source location from different file" =
+    let output =
+      print_endline "This is a sentence.";
+      expect_test_output
+        ~here:{ pos_fname = "__nonexistent__"; pos_lnum = 1; pos_bol = 0; pos_cnum = 0 }
+        ()
+    in
+    [%expect {| |}];
+    print_string output;
+    [%expect {| This is a sentence. |}]
+  ;;
+end
 
 let%expect_test "smash_sexp" =
   {|

@@ -4,6 +4,7 @@ module CR = struct
   type t =
     | CR
     | CR_soon
+    | CR_soon_for of string
     | CR_someday
     | Comment
     | Suppress
