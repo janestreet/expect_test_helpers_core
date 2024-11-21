@@ -171,7 +171,8 @@ module type Expect_test_helpers_core = sig
 
       See documentation above about CRs and workflows for failing allocation tests. *)
   val require_allocation_does_not_exceed
-    :  ?print_limit:int (** default is [1_000] *)
+    :  ?cr:CR.t
+    -> ?print_limit:int (** default is [1_000] *)
     -> ?hide_positions:bool (** default is [false] *)
     -> Allocation_limit.t
     -> ?here:Stdlib.Lexing.position
@@ -180,7 +181,8 @@ module type Expect_test_helpers_core = sig
 
   (** Like [require_allocation_does_not_exceed], for functions producing local values. *)
   val require_allocation_does_not_exceed_local
-    :  ?print_limit:int (** default is [1_000] *)
+    :  ?cr:CR.t
+    -> ?print_limit:int (** default is [1_000] *)
     -> ?hide_positions:bool (** default is [false] *)
     -> Allocation_limit.t
     -> ?here:Stdlib.Lexing.position
@@ -192,7 +194,8 @@ module type Expect_test_helpers_core = sig
 
       See documentation above about CRs and workflows for failing allocation tests. *)
   val require_no_allocation
-    :  ?print_limit:int
+    :  ?cr:CR.t
+    -> ?print_limit:int
     -> ?hide_positions:bool (** default is [false] *)
     -> ?here:Stdlib.Lexing.position
     -> (unit -> 'a)
@@ -200,7 +203,8 @@ module type Expect_test_helpers_core = sig
 
   (** Like [require_no_allocation], for functions producing local values. *)
   val require_no_allocation_local
-    :  ?print_limit:int
+    :  ?cr:CR.t
+    -> ?print_limit:int
     -> ?hide_positions:bool (** default is [false] *)
     -> ?here:Stdlib.Lexing.position
     -> (unit -> 'a)

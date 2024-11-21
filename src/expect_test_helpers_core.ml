@@ -204,6 +204,7 @@ let require_allocation_does_not_exceed_local_private
 ;;
 
 let require_allocation_does_not_exceed_local
+  ?cr
   ?print_limit
   ?hide_positions
   allocation_limit
@@ -211,6 +212,7 @@ let require_allocation_does_not_exceed_local
   f
   =
   require_allocation_does_not_exceed_local_private
+    ?cr
     ?print_limit
     ?hide_positions
     allocation_limit
@@ -219,6 +221,7 @@ let require_allocation_does_not_exceed_local
 ;;
 
 let require_allocation_does_not_exceed
+  ?cr
   ?print_limit
   ?hide_positions
   limit
@@ -226,6 +229,7 @@ let require_allocation_does_not_exceed
   f
   =
   (require_allocation_does_not_exceed_local
+     ?cr
      ?print_limit
      ?hide_positions
      limit
@@ -235,12 +239,14 @@ let require_allocation_does_not_exceed
 ;;
 
 let require_no_allocation_local
+  ?cr
   ?print_limit
   ?hide_positions
   ?(here = Stdlib.Lexing.dummy_pos)
   f
   =
   require_allocation_does_not_exceed_local
+    ?cr
     ?print_limit
     ?hide_positions
     (Minor_words 0)
@@ -248,9 +254,14 @@ let require_no_allocation_local
     f
 ;;
 
-let require_no_allocation ?print_limit ?hide_positions ?(here = Stdlib.Lexing.dummy_pos) f
+let require_no_allocation
+  ?cr
+  ?print_limit
+  ?hide_positions
+  ?(here = Stdlib.Lexing.dummy_pos)
+  f
   =
-  (require_no_allocation_local ?print_limit ?hide_positions ~here (fun () ->
+  (require_no_allocation_local ?cr ?print_limit ?hide_positions ~here (fun () ->
      { global = f () }))
     .global
 ;;

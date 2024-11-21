@@ -4,6 +4,7 @@ module CR = struct
   type t =
     | CR
     | CR_soon
+    | CR_soon_for of string
     | CR_someday
     | Comment
     | Suppress
@@ -512,4 +513,8 @@ module type Expect_test_helpers_base = sig
       for the duration of the function you pass, after which the previous behavior (full
       precision, by default) is restored. *)
   val with_sexp_round_floats : (unit -> 'a) -> significant_digits:int -> 'a
+
+  (** Updates the currently collected expect test output to hide positions.
+      Equivalent to [print_string ~hide_positions:true [%expect.output]]. *)
+  val hide_positions_in_expect_test_output : ?here:Stdlib.Lexing.position -> unit -> unit
 end

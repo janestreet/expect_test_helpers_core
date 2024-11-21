@@ -211,6 +211,20 @@ let%expect_test "[require false] on non-comment [~cr] values includes instructio
     |}]
 ;;
 
+let%expect_test "[require false ~cr:(CR_soon_for _)] prints addressee" =
+  require false ~cr:(CR_soon_for "nobody");
+  [%expect.output]
+  |> String.substr_replace_first ~pattern:"CR" ~with_:"$CR"
+  |> print_string;
+  [%expect
+    {|
+    (* $CR-soon require-failed for nobody: lib/expect_test_helpers/base/test/test_expect_test_helpers_base.ml:LINE:COL.
+       Do not 'X' this CR; instead make the required property true,
+       which will make the CR disappear.  For more information, see
+       [Expect_test_helpers_base.require]. *)
+    |}]
+;;
+
 let%expect_test "[require_equal] success" =
   require_equal (module Int) ~cr:Comment 1 1;
   [%expect {| |}]
@@ -510,7 +524,14 @@ include struct
       {|
       (* require-failed: lib/expect_test_helpers/base/test/test_expect_test_helpers_base.ml:LINE:COL. *)
       ("unexpected [Ok]" ok)
-      |}]
+      |}];
+    require_error
+      print_ok
+      (Or_error.error_s [%sexp [%here]])
+      ~hide_positions:true
+      ~print_error:true;
+    [%expect
+      {| lib/expect_test_helpers/base/test/test_expect_test_helpers_base.ml:LINE:COL |}]
   ;;
 end
 
