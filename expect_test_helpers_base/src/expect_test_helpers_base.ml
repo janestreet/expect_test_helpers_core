@@ -62,6 +62,7 @@ module Sexp_style = struct
       ; leading_threshold = Atom_threshold 0, Character_threshold 0
       ; separator = No_separator
       ; sticky_comments = After
+      ; encoding = Ascii
       }
   ;;
 end
@@ -131,14 +132,14 @@ let rec replace_s (sexp : Sexp.t) ~pattern ~with_ : Sexp.t =
 ;;
 
 let expect_test_output ~(here : [%call_pos]) () =
-  (Ppx_expect_runtime.For_external.read_current_test_output_exn [@alert
-                                                                  "-ppx_expect_runtime"])
+  (Ppx_expect_runtime.For_external.read_current_test_output_exn
+  [@alert "-ppx_expect_runtime"])
     ~here
 ;;
 
 let raise_if_output_did_not_match ?message ~(here : [%call_pos]) () =
-  if (Ppx_expect_runtime.For_external.current_test_has_output_that_does_not_match_exn [@alert
-                                                                                        "-ppx_expect_runtime"])
+  if (Ppx_expect_runtime.For_external.current_test_has_output_that_does_not_match_exn
+     [@alert "-ppx_expect_runtime"])
        ~here
   then
     raise_s
@@ -151,6 +152,11 @@ let raise_if_output_did_not_match ?message ~(here : [%call_pos]) () =
 
 let am_running_expect_test =
   (Ppx_expect_runtime.For_external.am_running_expect_test [@alert "-ppx_expect_runtime"])
+;;
+
+let current_expect_test_name_exn ~(here : [%call_pos]) () =
+  Ppx_expect_runtime.For_external.current_expect_test_name_exn
+    ~here [@alert "-ppx_expect_runtime"]
 ;;
 
 let assert_am_running_expect_test ~(here : [%call_pos]) () =
@@ -222,19 +228,32 @@ let print_cr ?cr ?hide_positions ~(here : [%call_pos]) message =
   print_cr_with_optional_message ?cr ?hide_positions ~here (Some message)
 ;;
 
-let require ?cr ?hide_positions ?if_false_then_print_s ~(here : [%call_pos]) bool =
+let require'
+  ?cr
+  ?hide_positions
+  ~(local_ if_false_then_print_s)
+  ~(here : [%call_pos])
+  bool
+  =
   match bool with
   | true -> ()
   | false ->
-    print_cr_with_optional_message
-      ?cr
-      ?hide_positions
-      ~here
-      (Option.map if_false_then_print_s ~f:force)
+    let msg = if_false_then_print_s () in
+    print_cr_with_optional_message ?cr ?hide_positions ~here msg
 ;;
 
+let require ?cr ?hide_positions ?if_false_then_print_s ~(here : [%call_pos]) bool =
+  let if_false_then_print_s =
+    stack_ fun () -> Option.map if_false_then_print_s ~f:force
+  in
+  require' ?cr ?hide_positions ~here bool ~if_false_then_print_s [@nontail]
+;;
+
+[%%template
+[@@@kind.default k = (value, float64, bits32, bits64, word)]
+
 let require_equal
-  (type a)
+  (type a : k)
   ?cr
   ?hide_positions
   ?if_false_then_print_s
@@ -244,22 +263,21 @@ let require_equal
   x
   y
   =
-  require
-    ?cr
-    ?hide_positions
-    ~here
-    (M.equal x y)
-    ~if_false_then_print_s:
-      (lazy
-        [%message
-          message
-            ~_:(x : M.t)
-            ~_:(y : M.t)
-            ~_:(if_false_then_print_s : (Sexp.t Lazy.t option[@sexp.option]))])
+  let if_false_then_print_s =
+    stack_
+      fun () ->
+        Some
+          [%message
+            message
+              ~_:(x : M.t)
+              ~_:(y : M.t)
+              ~_:(if_false_then_print_s : (Sexp.t Lazy.t option[@sexp.option]))]
+  in
+  require' ?cr ?hide_positions ~here (M.equal x y) ~if_false_then_print_s [@nontail]
 ;;
 
 let require_not_equal
-  (type a)
+  (type a : k)
   ?cr
   ?hide_positions
   ?if_false_then_print_s
@@ -284,7 +302,7 @@ let require_not_equal
 ;;
 
 let require_compare_equal
-  (type a)
+  (type a : k)
   ?cr
   ?hide_positions
   ?message
@@ -293,7 +311,7 @@ let require_compare_equal
   x
   y
   =
-  require_equal
+  (require_equal [@kind k])
     ?cr
     ?hide_positions
     ?message
@@ -308,7 +326,7 @@ let require_compare_equal
 ;;
 
 let require_compare_not_equal
-  (type a)
+  (type a : k)
   ?cr
   ?hide_positions
   ?message
@@ -317,7 +335,7 @@ let require_compare_not_equal
   x
   y
   =
-  require_not_equal
+  (require_not_equal [@kind k])
     ?cr
     ?hide_positions
     ?message
@@ -329,7 +347,7 @@ let require_compare_not_equal
     end)
     x
     y
-;;
+;;]
 
 let require_sets_are_equal
   (type elt)
@@ -381,13 +399,14 @@ let try_with ?raise_message ?(show_backtrace = false) (type a) (f : unit -> a) =
       let backtrace =
         if not show_backtrace then None else Some (Backtrace.Exn.most_recent ())
       in
-      Ref.set_temporarily Backtrace.elide (not show_backtrace) ~f:(fun () ->
+      Dynamic.with_temporarily Backtrace.elide (not show_backtrace) ~f:(fun () ->
         Raised
           [%message
             ""
               ~_:(raise_message : (string option[@sexp.option]))
               ~_:(exn : exn)
-              (backtrace : (Backtrace.t option[@sexp.option]))])) [@nontail]
+              (backtrace : (Backtrace.t option[@sexp.option]))]))
+  [@nontail]
 ;;
 
 let require_does_not_raise ?cr ?hide_positions ?show_backtrace ~(here : [%call_pos]) f =
@@ -422,7 +441,7 @@ let require_first_gen
   | First first ->
     (match print_first with
      | None -> ()
-     | Some sexp_of_first -> print_s [%sexp (first : first)])
+     | Some sexp_of_first -> print_s ?hide_positions [%sexp (first : first)])
   | Second second ->
     print_cr ?cr ?hide_positions ~here [%message message ~_:(second : second)]
 ;;
@@ -885,8 +904,13 @@ let test_compare_and_equal
 ;;
 
 let with_sexp_round_floats f ~significant_digits =
-  Ref.set_temporarily
+  Dynamic.with_temporarily
     Sexplib0.Sexp_conv.default_string_of_float
-    (fun v -> Float.to_string (Float.round_significant ~significant_digits v))
+    (Portability_hacks.magic_portable__needs_base_and_core (fun v ->
+       Float.to_string (Float.round_significant ~significant_digits v)))
     ~f
+;;
+
+let hide_positions_in_expect_test_output ~(here : [%call_pos]) () =
+  print_string ~hide_positions:true (expect_test_output ~here ())
 ;;

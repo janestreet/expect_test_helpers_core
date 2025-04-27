@@ -147,6 +147,9 @@ let print_and_check_stable_int63able_type
     list
 ;;
 
+[%%template
+[@@@kind.default k = (value, float64, bits32, bits64, word)]
+
 let require_allocation_does_not_exceed_local_private
   ?(cr = CR.CR)
   ?hide_positions
@@ -155,11 +158,11 @@ let require_allocation_does_not_exceed_local_private
   ~(here : [%call_pos])
   f
   = exclave_
-  let ( x
-      , { Gc.For_testing.Allocation_report.major_words_allocated; minor_words_allocated }
-      , allocs )
+  let #( x
+       , { Gc.For_testing.Allocation_report.major_words_allocated; minor_words_allocated }
+       , allocs )
     =
-    Gc.For_testing.measure_and_log_allocation_local f
+    (Gc.For_testing.measure_and_log_allocation_local [@kind k]) f
   in
   let allocs = [%globalize: Gc.For_testing.Allocation_log.t list] allocs in
   require
@@ -204,13 +207,15 @@ let require_allocation_does_not_exceed_local_private
 ;;
 
 let require_allocation_does_not_exceed_local
+  ?cr
   ?print_limit
   ?hide_positions
   allocation_limit
   ~(here : [%call_pos])
   f
   = exclave_
-  require_allocation_does_not_exceed_local_private
+  (require_allocation_does_not_exceed_local_private [@kind k])
+    ?cr
     ?print_limit
     ?hide_positions
     allocation_limit
@@ -218,25 +223,10 @@ let require_allocation_does_not_exceed_local
     f
 ;;
 
-let require_allocation_does_not_exceed
-  ?print_limit
-  ?hide_positions
-  limit
-  ~(here : [%call_pos])
-  f
-  =
-  (require_allocation_does_not_exceed_local
-     ?print_limit
-     ?hide_positions
-     limit
-     ~here
-     (fun () -> { global = f () }))
-    .global
-;;
-
-let require_no_allocation_local ?print_limit ?hide_positions ~(here : [%call_pos]) f
+let require_no_allocation_local ?cr ?print_limit ?hide_positions ~(here : [%call_pos]) f
   = exclave_
-  require_allocation_does_not_exceed_local
+  (require_allocation_does_not_exceed_local [@kind k])
+    ?cr
     ?print_limit
     ?hide_positions
     (Minor_words 0)
@@ -244,11 +234,39 @@ let require_no_allocation_local ?print_limit ?hide_positions ~(here : [%call_pos
     f
 ;;
 
-let require_no_allocation ?print_limit ?hide_positions ~(here : [%call_pos]) f =
-  (require_no_allocation_local ?print_limit ?hide_positions ~here (fun () ->
-     { global = f () }))
-    .global
+type ('a : k) global = { global : 'a @@ global } [@@unboxed]
+
+let require_allocation_does_not_exceed
+  ?cr
+  ?print_limit
+  ?hide_positions
+  limit
+  ~(here : [%call_pos])
+  f
+  =
+  let { global } =
+    (require_allocation_does_not_exceed_local [@kind k])
+      ?cr
+      ?print_limit
+      ?hide_positions
+      limit
+      ~here
+      (fun () -> { global = f () })
+  in
+  global
 ;;
+
+let require_no_allocation ?cr ?print_limit ?hide_positions ~(here : [%call_pos]) f =
+  let { global } =
+    (require_no_allocation_local [@kind k])
+      ?cr
+      ?print_limit
+      ?hide_positions
+      ~here
+      (fun () -> { global = f () })
+  in
+  global
+;;]
 
 let print_and_check_comparable_sexps
   (type a)
