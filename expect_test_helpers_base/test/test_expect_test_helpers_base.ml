@@ -24,6 +24,53 @@ let%test_unit "[am_running_expect_test] and [assert_am_running_expect_test] when
         \  lib/expect_test_helpers/base/test/test_expect_test_helpers_base.ml:LINE:COL)"
 ;;
 
+let%expect_test "Test description properly emitted when in an expect-test" =
+  print_s [%sexp (current_expect_test_name_exn () : string option)];
+  [%expect {| ("Test description properly emitted when in an expect-test") |}]
+;;
+
+let%expect_test "Very long test description that spans multiple lines after apply-style, \
+                 ensure that it doesn't have extra spaces added when it is queried from \
+                 code in the test"
+  =
+  print_s [%sexp (current_expect_test_name_exn () : string option)];
+  [%expect
+    {| ("Very long test description that spans multiple lines after apply-style, ensure that it doesn't have extra spaces added when it is queried from code in the test") |}]
+;;
+
+module%test [@name "empty-named expect-tests are handled correctly"] _ = struct
+  let%expect_test "description still works inside a test module" =
+    print_s [%sexp (current_expect_test_name_exn () : string option)];
+    [%expect {| ("description still works inside a test module") |}]
+  ;;
+
+  let%expect_test "" =
+    print_s [%sexp (current_expect_test_name_exn () : string option)];
+    [%expect {| ("") |}]
+  ;;
+
+  let%expect_test _ =
+    print_s [%sexp (current_expect_test_name_exn () : string option)];
+    [%expect {| () |}]
+  ;;
+end
+
+module%test [@name "test description raises when not in an expect-test"] _ = struct
+  (* Don't do this inside the expect test *)
+  let name_res = Or_error.try_with current_expect_test_name_exn
+
+  let%expect_test "check error" =
+    print_s [%sexp (name_res : string option Or_error.t)];
+    hide_positions_in_expect_test_output ();
+    [%expect
+      {|
+      (Error (
+        "Ppx_expect_runtime.For_external.current_expect_test_name_exn called while there are no tests running"
+        lib/expect_test_helpers/base/test/test_expect_test_helpers_base.ml:LINE:COL))
+      |}]
+  ;;
+end
+
 let%expect_test "multiple calls to [print_s] create multiple lines" =
   print_s [%message "hello"];
   print_s [%message "there"];

@@ -147,6 +147,9 @@ let print_and_check_stable_int63able_type
     list
 ;;
 
+[%%template
+[@@@kind.default k = (value, float64, bits32, bits64, word)]
+
 let require_allocation_does_not_exceed_local_private
   ?(cr = CR.CR)
   ?hide_positions
@@ -159,7 +162,7 @@ let require_allocation_does_not_exceed_local_private
       , { Gc.For_testing.Allocation_report.major_words_allocated; minor_words_allocated }
       , allocs )
     =
-    Gc.For_testing.measure_and_log_allocation_local f
+    (Gc.For_testing.measure_and_log_allocation_local [@kind k]) f
   in
   let allocs = [%globalize: Gc.For_testing.Allocation_log.t list] allocs in
   require
@@ -211,31 +214,13 @@ let require_allocation_does_not_exceed_local
   ?(here = Stdlib.Lexing.dummy_pos)
   f
   =
-  require_allocation_does_not_exceed_local_private
+  (require_allocation_does_not_exceed_local_private [@kind k])
     ?cr
     ?print_limit
     ?hide_positions
     allocation_limit
     ~here
     f
-;;
-
-let require_allocation_does_not_exceed
-  ?cr
-  ?print_limit
-  ?hide_positions
-  limit
-  ?(here = Stdlib.Lexing.dummy_pos)
-  f
-  =
-  (require_allocation_does_not_exceed_local
-     ?cr
-     ?print_limit
-     ?hide_positions
-     limit
-     ~here
-     (fun () -> { global = f () }))
-    .global
 ;;
 
 let require_no_allocation_local
@@ -245,13 +230,35 @@ let require_no_allocation_local
   ?(here = Stdlib.Lexing.dummy_pos)
   f
   =
-  require_allocation_does_not_exceed_local
+  (require_allocation_does_not_exceed_local [@kind k])
     ?cr
     ?print_limit
     ?hide_positions
     (Minor_words 0)
     ~here
     f
+;;
+
+type 'a global = { global : 'a } [@@unboxed]
+
+let require_allocation_does_not_exceed
+  ?cr
+  ?print_limit
+  ?hide_positions
+  limit
+  ?(here = Stdlib.Lexing.dummy_pos)
+  f
+  =
+  let { global } =
+    (require_allocation_does_not_exceed_local [@kind k])
+      ?cr
+      ?print_limit
+      ?hide_positions
+      limit
+      ~here
+      (fun () -> { global = f () })
+  in
+  global
 ;;
 
 let require_no_allocation
@@ -261,10 +268,16 @@ let require_no_allocation
   ?(here = Stdlib.Lexing.dummy_pos)
   f
   =
-  (require_no_allocation_local ?cr ?print_limit ?hide_positions ~here (fun () ->
-     { global = f () }))
-    .global
-;;
+  let { global } =
+    (require_no_allocation_local [@kind k])
+      ?cr
+      ?print_limit
+      ?hide_positions
+      ~here
+      (fun () -> { global = f () })
+  in
+  global
+;;]
 
 let print_and_check_comparable_sexps
   (type a)

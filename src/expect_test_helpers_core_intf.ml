@@ -79,7 +79,7 @@ module type Expect_test_helpers_core = sig
   (** {3 Serialization tests} *)
 
   (** [print_and_check_stable_type] prints the bin-io digest for the given type, and the
-      bin-io and sexp serializations of the given values.  Prints an error message for any
+      bin-io and sexp serializations of the given values. Prints an error message for any
       serializations that fail to round-trip, and for any bin-io serializations that
       exceed [max_binable_length]. *)
   val print_and_check_stable_type
@@ -103,8 +103,8 @@ module type Expect_test_helpers_core = sig
     -> unit
 
   (** [print_and_check_container_sexps] prints the sexp representation of maps, sets, hash
-      tables, and hash sets based on the given values.  For sets and hash sets, prints a
-      CR if the sexp does not correspond to a list of elements.  For maps and hash tables,
+      tables, and hash sets based on the given values. For sets and hash sets, prints a CR
+      if the sexp does not correspond to a list of elements. For maps and hash tables,
       prints a CR if the sexp does not correspond to an association list keyed on
       elements. *)
   val print_and_check_container_sexps
@@ -144,9 +144,12 @@ module type Expect_test_helpers_core = sig
     include Allocation_limit
   end
 
+  [%%template:
+  [@@@kind.default k = (value, float64, bits32, bits64, word)]
+
   (** [require_allocation_does_not_exceed] is a specialized form of [require] that only
-      produces output when [f ()] allocates more than the given limits.  The output will
-      include the actual number of major and minor words allocated.  We do NOT include
+      produces output when [f ()] allocates more than the given limits. The output will
+      include the actual number of major and minor words allocated. We do NOT include
       these numbers in the successful case because those numbers are not stable with
       respect to compiler versions and build flags.
 
@@ -164,7 +167,7 @@ module type Expect_test_helpers_core = sig
 
       With the latter idiom, the compiler may optimize the computation of [f ()] taking
       advantage of the fact that the result is ignored, and eliminate allocation that is
-      intended to be measured.  With the former idiom, the compiler cannot do such
+      intended to be measured. With the former idiom, the compiler cannot do such
       optimization and must compute the result of [f ()].
 
       Also prints up to [print_limit] allocation locations.
@@ -189,8 +192,8 @@ module type Expect_test_helpers_core = sig
     -> (unit -> 'a)
     -> 'a
 
-  (** [require_no_allocation here f] is equivalent to [require_allocation_does_not_exceed
-      (Minor_words 0) here f].
+  (** [require_no_allocation here f] is equivalent to
+      [require_allocation_does_not_exceed (Minor_words 0) here f].
 
       See documentation above about CRs and workflows for failing allocation tests. *)
   val require_no_allocation
@@ -208,7 +211,7 @@ module type Expect_test_helpers_core = sig
     -> ?hide_positions:bool (** default is [false] *)
     -> ?here:Stdlib.Lexing.position
     -> (unit -> 'a)
-    -> 'a
+    -> 'a]
 
   (**/**)
 
