@@ -112,6 +112,96 @@ module type Expect_test_helpers_base = sig
     val simple_pretty : t
   end
 
+  module Expectation : sig
+    (** Tools for managing [[%expectation]] blocks. *)
+
+    (** All functions in this module raise if called outside an expect test. *)
+
+    (** {2 Expectation lifecycle}
+
+        An expectation becomes "active" when execution of a test encounters an
+        [[%expectation]] block. Only one expectation can be active at a time. The active
+        expectation remains active until a call to [commit], [skip], or [reset], at which
+        point it is resolved and becomes inactive.
+
+        After each [[%expectation]], one of [commit], [skip], or [reset] must be called
+        before the next [[%expect]], [[%expect_exact]], [[%expectation]], or the end of
+        [let%expect_test]. *)
+
+    (** Returns [true] if there is currently an active expectation, [false] otherwise. *)
+    val is_active : ?here:Stdlib.Lexing.position -> unit -> bool
+
+    (** Accepts the test result for the currently active expectation.
+
+        If [is_successful ()], [commit ()] does not produce a diff in expect test, just as
+        when an [[%expect]] block matches. Otherwise, [commit ()] causes the contents of
+        the [[%expectation]] to be replaced with the actual output in the corrected file.
+
+        If there is an [[%expectation]] block for which [commit ()] is never called, it is
+        replaced by a [[%expectation.never_committed]] node in the corrected file.
+
+        Raises if no expectation is active (i.e., if [is_active ()] returns [false]). *)
+    val commit : ?here:Stdlib.Lexing.position -> unit -> unit
+
+    (** Skips the currently active expectation.
+
+        This means that no change is made to the [[%expectation]] block in the corrected
+        file, even if [not (is_successful ())].
+
+        A [skip]'d [[%expectation]] still consumes its input. For example:
+        {[
+          let%expect_test _ =
+            print_endline "right";
+            [%expectation {| wrong |}];
+            Expectation.skip ();
+            [%expect {| |}]
+          ;;
+        ]}
+        The [[%expect]] block at the end of the test receives no input.
+
+        Raises if no expectation is active (i.e., if [is_active ()] returns [false]). *)
+    val skip : ?here:Stdlib.Lexing.position -> unit -> unit
+
+    (** Like [skip ()], but also resets the collected input. So the test from the [skip]
+        documentation would instead look like this:
+        {[
+          let%expect_test _ =
+            print_endline "right";
+            [%expectation {| wrong |}];
+            Expectation.reset ();
+            [%expect {| right |}]
+          ;;
+        ]}
+
+        Raises if no expectation is active (i.e., if [is_active ()] returns [false]). *)
+    val reset : ?here:Stdlib.Lexing.position -> unit -> unit
+
+    (** {2 Expectation helpers}
+
+        The following functions may be called any number of times while an expectation is
+        active (i.e., after encountering an [[%expectation]] and before calling [commit],
+        [skip], or [reset]). They raise if called when no expectation is active. *)
+
+    (** Produces the output consumed by the currently active expectation. Raises if no
+        expectation is active. *)
+    val actual : ?here:Stdlib.Lexing.position -> unit -> string
+
+    (** Produces the output expected by the currently active expectation. Is [None] for
+        [[%expectation.never_committed]] blocks. Raises if no expectation is active. *)
+    val expected : ?here:Stdlib.Lexing.position -> unit -> string option
+
+    (** Reports whether [actual ()] matches [expected ()] for the currently active
+        expectation. This is not the same as [String.equal (actual ()) (expected ())] due
+        to whitespace normalization. Raises if no expectation is active. *)
+    val is_successful : ?here:Stdlib.Lexing.position -> unit -> bool
+
+    (**/**)
+
+    (** Produces a sexp representing the state of the currently active expectation. Raises
+        if no expectation is active. *)
+    val sexp_for_debugging : ?here:Stdlib.Lexing.position -> unit -> Sexp.t
+  end
+
   (** [hide_positions_in_string] does line-based regexp matching to replace line numbers
       and column numbers that appear in source-code positions with constant text [LINE]
       and [COL]. This can be useful in making displayed test output less fragile. *)
@@ -152,6 +242,16 @@ module type Expect_test_helpers_base = sig
 
       Raises if called when not running an expect test. *)
   val expect_test_output : ?here:Stdlib.Lexing.position -> unit -> string
+
+  (** Sets aside output generated up to now. Within the callback, only new output will be
+      captured by [[%expect]], [[%expect.output]], and the like. After the callback, the
+      old output is prepended to any remaining new output.
+
+      This can be used for running and modifying a selected portion of test output,
+      without having to remove and re-add anything prior. For example, you could run some
+      noisy tests inside this, then decide to erase their output if they did not trigger
+      [on_print_cr] (below). *)
+  val with_empty_expect_test_output : ?here:Stdlib.Lexing.position -> (unit -> 'a) -> 'a
 
   (** Raises an error if, in the current test:
       1. Control flow has reached a [[%expect.unreachable]] node or
