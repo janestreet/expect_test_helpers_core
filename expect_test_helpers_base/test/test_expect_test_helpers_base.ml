@@ -5,6 +5,53 @@ open! Expect_test_helpers_base
 (* A dummy location for testing purposes *)
 let nowhere = { Lexing.pos_fname = "test"; pos_lnum = 0; pos_bol = 0; pos_cnum = 0 }
 
+let%expect_test "[Expectation.reset]" =
+  let check () =
+    [%expectation {| 012345 |}];
+    if Expectation.is_successful () then Expectation.commit () else Expectation.reset ()
+  in
+  List.init 10 ~f:Fn.id
+  |> List.iter ~f:(fun i ->
+    printf "%d" i;
+    check ());
+  [%expect {| 6789 |}]
+;;
+
+let%expect_test "[Expectation.reset] with output between resets" =
+  (* This test builds up the string of an [%expectation] by printing it one line at a
+     time. If the string doesn't match, we use [Expectation.actual] to print it back out
+     so that we can keep on building on it. *)
+  let check =
+    let num_runs = ref 0 in
+    fun () ->
+      Int.incr num_runs;
+      print_endline " testing";
+      [%expectation
+        {|
+        0 testing
+        1 testing
+        2 testing
+        3 testing
+        4 testing
+        |}];
+      if Expectation.is_successful () || !num_runs = 5
+      then Expectation.commit ()
+      else Expectation.reset ()
+  in
+  List.init 10 ~f:Fn.id
+  |> List.iter ~f:(fun i ->
+    printf "%d" i;
+    check ());
+  [%expect
+    {|
+    5 testing
+    6 testing
+    7 testing
+    8 testing
+    9 testing
+    |}]
+;;
+
 let%expect_test "[am_running_expect_test] and [assert_am_running_expect_test] when true" =
   require (am_running_expect_test ());
   assert_am_running_expect_test ();
@@ -1311,5 +1358,113 @@ let%expect_test ("test_compare_and_equal" [@tags "64-bits-only"]) =
       (y           76753)
       (compare_x_y -15508265059)
       (equal_x_y   true))
+    |}]
+;;
+
+let%expect_test "[with_empty_expect_test_output]" =
+  (* nothing captured *)
+  print_endline "one";
+  with_empty_expect_test_output (fun () -> print_endline "two");
+  print_endline "three";
+  [%expect
+    {|
+    one
+    two
+    three
+    |}];
+  (* output captured *)
+  print_endline "one";
+  with_empty_expect_test_output (fun () ->
+    print_endline "two";
+    [%expect {| two |}]);
+  print_endline "three";
+  [%expect
+    {|
+    one
+    three
+    |}];
+  (* partial output captured *)
+  print_endline "one";
+  with_empty_expect_test_output (fun () ->
+    print_endline "two";
+    [%expect {| two |}];
+    print_endline "three");
+  print_endline "four";
+  [%expect
+    {|
+    one
+    three
+    four
+    |}];
+  (* nothing captured in nested calls *)
+  print_endline "one";
+  with_empty_expect_test_output (fun () ->
+    print_endline "two";
+    with_empty_expect_test_output (fun () -> print_endline "three");
+    print_endline "four");
+  print_endline "five";
+  [%expect
+    {|
+    one
+    two
+    three
+    four
+    five
+    |}];
+  (* output captured in nested calls *)
+  print_endline "one";
+  with_empty_expect_test_output (fun () ->
+    print_endline "two";
+    with_empty_expect_test_output (fun () ->
+      print_endline "three";
+      [%expect {| three |}]);
+    print_endline "four";
+    [%expect
+      {|
+      two
+      four
+      |}]);
+  print_endline "five";
+  [%expect
+    {|
+    one
+    five
+    |}];
+  (* output returned from nested calls *)
+  print_endline "one";
+  let a, b =
+    with_empty_expect_test_output (fun () ->
+      print_endline "two";
+      let a =
+        with_empty_expect_test_output (fun () ->
+          print_endline "three";
+          String.split_lines (expect_test_output ()))
+      in
+      print_endline "four";
+      let b = String.split_lines (expect_test_output ()) in
+      a, b)
+  in
+  print_endline "five";
+  let c = String.split_lines (expect_test_output ()) in
+  print_s [%message "" (a : string list) (b : string list) (c : string list)];
+  [%expect
+    {|
+    ((a (three))
+     (b (two four))
+     (c (one five)))
+    |}];
+  (* multiple successive calls *)
+  with_empty_expect_test_output (fun () ->
+    with_empty_expect_test_output (fun () -> print_endline "one");
+    with_empty_expect_test_output (fun () -> print_endline "two"));
+  with_empty_expect_test_output (fun () ->
+    with_empty_expect_test_output (fun () -> print_endline "three");
+    with_empty_expect_test_output (fun () -> print_endline "four"));
+  [%expect
+    {|
+    one
+    two
+    three
+    four
     |}]
 ;;

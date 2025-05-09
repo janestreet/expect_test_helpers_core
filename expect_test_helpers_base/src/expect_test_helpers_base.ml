@@ -137,6 +137,12 @@ let expect_test_output ~(here : [%call_pos]) () =
     ~here
 ;;
 
+let with_empty_expect_test_output ~(here : [%call_pos]) f =
+  (Ppx_expect_runtime.For_external.with_empty_test_output [@alert "-ppx_expect_runtime"])
+    ~here
+    f
+;;
+
 let raise_if_output_did_not_match ?message ~(here : [%call_pos]) () =
   if (Ppx_expect_runtime.For_external.current_test_has_output_that_does_not_match_exn
      [@alert "-ppx_expect_runtime"])
@@ -200,6 +206,18 @@ let remove_backtraces =
       Sexp.(List [ Atom "ELIDED BACKTRACE" ])
     | s -> s)
 ;;
+
+module Expectation = struct
+  include Ppx_expect_runtime.For_external.Expectation [@alert "-ppx_expect_runtime"]
+
+  let reset ~(here : [%call_pos]) () =
+    let output_since_expectation = expect_test_output ~here () in
+    let output_at_expectation = actual ~here () in
+    print_string output_at_expectation;
+    print_string output_since_expectation;
+    skip ()
+  ;;
+end
 
 let print_endline = Staged.unstage (wrap print_endline)
 let print_string = Staged.unstage (wrap print_string)
@@ -361,7 +379,7 @@ let require_sets_are_equal
   let module Elt = struct
     type t = elt
 
-    let sexp_of_t = (Set.comparator first).sexp_of_t
+    let sexp_of_t = Set.comparator first |> Comparator.sexp_of_t
   end
   in
   require
