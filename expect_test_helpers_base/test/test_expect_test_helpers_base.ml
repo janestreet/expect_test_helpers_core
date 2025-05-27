@@ -52,6 +52,32 @@ let%expect_test "[Expectation.reset] with output between resets" =
     |}]
 ;;
 
+(* $MDX part-begin=expectation_example *)
+let animate state ~target ~step = Int.min (state + step) target
+
+let progress_bar state ~target =
+  state := animate !state ~target ~step:1;
+  for i = 0 to 9 do
+    printf (if i < !state then "#" else ".")
+  done
+;;
+
+let%expect_test "progress_bar_state_change" =
+  let progress = ref 0 in
+  let timeout = ref 100 in
+  let target = 6 in
+  while !timeout > 0 do
+    timeout := !timeout - 1;
+    progress_bar progress ~target;
+    [%expectation {| ######.... |}];
+    if Expectation.is_successful () || !timeout = 0
+    then Expectation.commit ()
+    else Expectation.skip ()
+  done
+;;
+
+(* $MDX part-end *)
+
 let%expect_test "[am_running_expect_test] and [assert_am_running_expect_test] when true" =
   require (am_running_expect_test ());
   assert_am_running_expect_test ();
