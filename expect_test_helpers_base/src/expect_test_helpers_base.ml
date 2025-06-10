@@ -681,17 +681,13 @@ let quickcheck_m
   (module M : Base_quickcheck.Test.S with type t = a)
   ~f
   =
-  Base_quickcheck.Test.result
-    ?config
-    ?examples
-    (module M)
-    ~f:(fun elt ->
-      let crs = Queue.create () in
-      (* We set [on_print_cr] to accumulate CRs in [crs]; it affects both [f elt] as
+  Base_quickcheck.Test.result ?config ?examples (module M) ~f:(fun elt ->
+    let crs = Queue.create () in
+    (* We set [on_print_cr] to accumulate CRs in [crs]; it affects both [f elt] as
          well as our call to [require_does_not_raise]. *)
-      Ref.set_temporarily on_print_cr (Queue.enqueue crs) ~f:(fun () ->
-        require_does_not_raise ~here ?cr ?hide_positions (fun () -> f elt));
-      if Queue.is_empty crs then Ok () else Error (Queue.to_list crs))
+    Ref.set_temporarily on_print_cr (Queue.enqueue crs) ~f:(fun () ->
+      require_does_not_raise ~here ?cr ?hide_positions (fun () -> f elt));
+    if Queue.is_empty crs then Ok () else Error (Queue.to_list crs))
   |> Result.iter_error ~f:(fun (input, output) ->
     print_s [%message "quickcheck: test failed" (input : M.t)];
     List.iter output ~f:print_endline)
@@ -795,25 +791,19 @@ let test_compare
             (compare_x_z : int)])
   in
   let test m ~f = quickcheck_m ~here ?config ?cr ?hide_positions m ~f in
-  test
-    (module M)
-    ~f:(fun x ->
-      check_reflexive x;
-      check_asymmetric x x;
-      check_transitive x x x);
-  test
-    (module Tuple2 (M))
-    ~f:(fun (x, y) ->
-      check_asymmetric x y;
-      check_transitive x x y;
-      check_transitive x y x;
-      check_transitive y x x);
-  test
-    (module Tuple3 (M))
-    ~f:(fun (x, y, z) ->
-      check_transitive x y z;
-      check_transitive x z y;
-      check_transitive y x z)
+  test (module M) ~f:(fun x ->
+    check_reflexive x;
+    check_asymmetric x x;
+    check_transitive x x x);
+  test (module Tuple2 (M)) ~f:(fun (x, y) ->
+    check_asymmetric x y;
+    check_transitive x x y;
+    check_transitive x y x;
+    check_transitive y x x);
+  test (module Tuple3 (M)) ~f:(fun (x, y, z) ->
+    check_transitive x y z;
+    check_transitive x z y;
+    check_transitive y x z)
 ;;
 
 let test_equal
@@ -864,25 +854,19 @@ let test_equal
     | false, false -> ()
   in
   let test m ~f = quickcheck_m ~here ?config ?cr ?hide_positions m ~f in
-  test
-    (module M)
-    ~f:(fun x ->
-      check_reflexive x;
-      check_symmetric x x;
-      check_transitive x x x);
-  test
-    (module Tuple2 (M))
-    ~f:(fun (x, y) ->
-      check_symmetric x y;
-      check_transitive x x y;
-      check_transitive x y x;
-      check_transitive y x x);
-  test
-    (module Tuple3 (M))
-    ~f:(fun (x, y, z) ->
-      check_transitive x y z;
-      check_transitive x z y;
-      check_transitive y x z)
+  test (module M) ~f:(fun x ->
+    check_reflexive x;
+    check_symmetric x x;
+    check_transitive x x x);
+  test (module Tuple2 (M)) ~f:(fun (x, y) ->
+    check_symmetric x y;
+    check_transitive x x y;
+    check_transitive x y x;
+    check_transitive y x x);
+  test (module Tuple3 (M)) ~f:(fun (x, y, z) ->
+    check_transitive x y z;
+    check_transitive x z y;
+    check_transitive y x z)
 ;;
 
 let test_compare_and_equal
@@ -910,15 +894,9 @@ let test_compare_and_equal
             (compare_x_y : int)
             (equal_x_y : bool)]
   in
-  quickcheck_m
-    ~here
-    ?config
-    ?cr
-    ?hide_positions
-    (module Tuple2 (M))
-    ~f:(fun (x, y) ->
-      check_agreement x y;
-      check_agreement y x)
+  quickcheck_m ~here ?config ?cr ?hide_positions (module Tuple2 (M)) ~f:(fun (x, y) ->
+    check_agreement x y;
+    check_agreement y x)
 ;;
 
 let with_sexp_round_floats f ~significant_digits =

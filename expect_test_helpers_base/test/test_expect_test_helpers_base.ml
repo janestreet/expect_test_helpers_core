@@ -889,10 +889,8 @@ let%expect_test "[quickcheck_m] success" =
 
 let%expect_test ("[quickcheck_m] failure" [@tags "64-bits-only"]) =
   let cr = CR.Comment in
-  quickcheck_m
-    ~cr
-    (module Int_for_quickcheck)
-    ~f:(fun int -> require ~cr (int > 100) ~if_false_then_print_s:(lazy [%message "BAD"]));
+  quickcheck_m ~cr (module Int_for_quickcheck) ~f:(fun int ->
+    require ~cr (int > 100) ~if_false_then_print_s:(lazy [%message "BAD"]));
   [%expect
     {|
     ("quickcheck: test failed" (input -15508265059))
@@ -903,12 +901,9 @@ let%expect_test ("[quickcheck_m] failure" [@tags "64-bits-only"]) =
 
 let%expect_test ("[quickcheck_m] failure with multiple CRs" [@tags "64-bits-only"]) =
   let cr = CR.Comment in
-  quickcheck_m
-    ~cr
-    (module Int_for_quickcheck)
-    ~f:(fun _ ->
-      print_cr ~cr [%message "first"];
-      require ~cr false ~if_false_then_print_s:(lazy [%message "second"]));
+  quickcheck_m ~cr (module Int_for_quickcheck) ~f:(fun _ ->
+    print_cr ~cr [%message "first"];
+    require ~cr false ~if_false_then_print_s:(lazy [%message "second"]));
   [%expect
     {|
     ("quickcheck: test failed" (input 76753))
@@ -922,10 +917,8 @@ let%expect_test ("[quickcheck_m] failure with multiple CRs" [@tags "64-bits-only
 let%expect_test ("[quickcheck_m] raised exception" [@tags "64-bits-only"]) =
   let cr = CR.Comment in
   require_does_not_raise (fun () ->
-    quickcheck_m
-      ~cr
-      (module Int_for_quickcheck)
-      ~f:(fun int -> if int > 100 then raise_s [%message "BAD"]));
+    quickcheck_m ~cr (module Int_for_quickcheck) ~f:(fun int ->
+      if int > 100 then raise_s [%message "BAD"]));
   [%expect
     {|
     ("quickcheck: test failed" (input 76753))
