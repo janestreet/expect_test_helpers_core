@@ -1,4 +1,5 @@
 open! Base
+open! Portable
 open! Stdio
 include Expect_test_helpers_base_intf
 
@@ -51,7 +52,7 @@ module Sexp_style = struct
     Pretty
       { indent = 1
       ; data_alignment = Data_not_aligned
-      ; color_scheme = [||]
+      ; color_scheme = Iarray.empty
       ; atom_coloring = Color_none
       ; atom_printing = Escaped
       ; paren_coloring = false
@@ -77,45 +78,53 @@ struct
 end
 
 let hide_temp_files_in_string =
-  let re = lazy (Re.compile (Re.seq [ Re.str ".tmp."; Re.repn Re.alnum 6 (Some 6) ])) in
-  fun string -> Re.replace_string (force re) ~by:".tmp.RANDOM" string
+  let re =
+    Portable_lazy.from_fun (fun () ->
+      Re.compile (Re.seq [ Re.str ".tmp."; Re.repn Re.alnum 6 (Some 6) ]))
+  in
+  fun string -> Re.replace_string (Portable_lazy.force re) ~by:".tmp.RANDOM" string
 ;;
 
 let hide_positions_in_string =
   let module Re = Re.Pcre in
   let expanders =
-    lazy
-      ([ (* This first pattern has an alphabetic prefix because we want to match exceptions
+    Portable_lazy.from_fun (fun () ->
+      [ (* This first pattern has an alphabetic prefix because we want to match exceptions
             and their file positions without also matching timestamps.  However, [Re.Pcre]
             doesn't implement back-references, precluding a simple substitution.  Instead,
             we provide a length of matched data to copy into the output, effectively acting
             like a back-reference in this special case. *)
-         "[a-zA-z]:[0-9]+:[0-9]+", 1, ":LINE:COL"
-       ; "line [0-9]+:", 0, "line LINE:"
-       ; "line [0-9]+, characters [0-9]+-[0-9]+", 0, "line LINE, characters C1-C2"
-       ; ( "lines [0-9]+-[0-9]+, characters [0-9]+-[0-9]+"
-         , 0
-         , "lines LINES, characters C1-C2" )
-       ]
-       |> List.map ~f:(fun (pattern, prefix_len, expansion) ->
-         let rex = Re.regexp pattern in
-         fun string ->
-           Re.substitute ~rex string ~subst:(fun orig ->
-             String.concat [ String.prefix orig prefix_len; expansion ])))
+        "[a-zA-z]:[0-9]+:[0-9]+", 1, ":LINE:COL"
+      ; "line [0-9]+:", 0, "line LINE:"
+      ; "line [0-9]+, characters [0-9]+-[0-9]+", 0, "line LINE, characters C1-C2"
+      ; ( "lines [0-9]+-[0-9]+, characters [0-9]+-[0-9]+"
+        , 0
+        , "lines LINES, characters C1-C2" )
+      ]
+      |> List.map ~f:(fun (pattern, prefix_len, expansion) ->
+        let rex = Re.regexp pattern in
+        { portable =
+            (fun string ->
+              Re.substitute ~rex string ~subst:(fun orig ->
+                String.concat [ String.prefix orig prefix_len; expansion ]))
+        }))
   in
   fun string ->
-    List.fold (force expanders) ~init:string ~f:(fun ac expander -> expander ac)
+    List.fold
+      (Portable_lazy.force expanders)
+      ~init:string
+      ~f:(fun ac { portable = expander } -> expander ac)
 ;;
 
 let maybe_hide_positions_in_string ?(hide_positions = false) string =
   if hide_positions then hide_positions_in_string string else string
 ;;
 
-let sexp_style = ref Sexp_style.default_pretty
+let sexp_style = Dynamic.make Sexp_style.default_pretty
 
 let sexp_to_string ?hide_positions sexp =
   let string =
-    match !sexp_style with
+    match Dynamic.get sexp_style with
     | To_string_mach -> Sexp.to_string_mach sexp ^ "\n"
     | To_string_hum -> Sexp.to_string_hum sexp ^ "\n"
     | Pretty config -> Sexp_pretty.pretty_string config sexp
@@ -177,7 +186,7 @@ let assert_am_running_expect_test ?(here = Stdlib.Lexing.dummy_pos) () =
 ;;
 
 let wrap f =
-  Staged.stage (fun ?hide_positions string ->
+  (Staged.stage [@mode portable]) (fun ?hide_positions string ->
     f (maybe_hide_positions_in_string ?hide_positions string))
 ;;
 
@@ -219,10 +228,10 @@ module Expectation = struct
   ;;
 end
 
-let print_endline = Staged.unstage (wrap print_endline)
-let print_string = Staged.unstage (wrap print_string)
+let print_endline = (Staged.unstage [@mode portable]) (wrap print_endline)
+let print_string = (Staged.unstage [@mode portable]) (wrap print_string)
 let print_s ?hide_positions sexp = print_string (sexp_to_string ?hide_positions sexp)
-let on_print_cr = ref (fun string -> print_endline string)
+let on_print_cr = Dynamic.make (fun string -> print_endline string)
 
 let print_cr_with_optional_message
   ?(cr = CR.CR)
@@ -235,7 +244,7 @@ let print_cr_with_optional_message
   | Suppress -> ()
   | _ ->
     let cr = CR.message cr here |> maybe_hide_positions_in_string ~hide_positions in
-    !on_print_cr
+    (Dynamic.get on_print_cr)
       (match optional_message with
        | None -> cr
        | Some sexp ->
@@ -291,7 +300,7 @@ let require_equal
         message
           ~_:(x : M.t)
           ~_:(y : M.t)
-          ~_:(if_false_then_print_s : (Sexp.t Lazy.t option[@sexp.option]))]
+          ~_:(if_false_then_print_s : (Sexp.t Base.Lazy.t option[@sexp.option]))]
   in
   require' ?cr ?hide_positions ~here (M.equal x y) ~if_false_then_print_s [@nontail]
 ;;
@@ -318,7 +327,7 @@ let require_not_equal
           message
             ~_:(x : M.t)
             ~_:(y : M.t)
-            ~_:(if_false_then_print_s : (Sexp.t Lazy.t option[@sexp.option]))])
+            ~_:(if_false_then_print_s : (Sexp.t Base.Lazy.t option[@sexp.option]))])
 ;;
 
 let require_compare_equal
@@ -602,10 +611,11 @@ let print_and_check_round_trip
        | [] -> (* a useless case anyway *) ()
        | [ (_, sexp, _) ] ->
          (* only one repr, print unlabeled *)
-         print_s sexp
+         print_s ?hide_positions sexp
        | _ :: _ :: _ ->
          (* multiple reprs, print with labels *)
          print_s
+           ?hide_positions
            (List
               (List.map conversions ~f:(fun (name, sexp, _) ->
                  [%sexp (tag_of name : string), (sexp : Sexp.t)]))));
@@ -690,17 +700,16 @@ let quickcheck_m
   (module M : Base_quickcheck.Test.S with type t = a)
   ~f
   =
-  Base_quickcheck.Test.result
-    ?config
-    ?examples
-    (module M)
-    ~f:(fun elt ->
-      let crs = Queue.create () in
-      (* We set [on_print_cr] to accumulate CRs in [crs]; it affects both [f elt] as
+  Base_quickcheck.Test.result ?config ?examples (module M) ~f:(fun elt ->
+    let crs = Atomic.make [] in
+    (* We set [on_print_cr] to accumulate CRs in [crs]; it affects both [f elt] as
          well as our call to [require_does_not_raise]. *)
-      Ref.set_temporarily on_print_cr (Queue.enqueue crs) ~f:(fun () ->
-        require_does_not_raise ~here ?cr ?hide_positions (fun () -> f elt));
-      if Queue.is_empty crs then Ok () else Error (Queue.to_list crs))
+    Dynamic.with_temporarily
+      on_print_cr
+      (fun cr -> Atomic.update crs ~pure_f:(fun crs -> cr :: crs))
+      ~f:(fun () -> require_does_not_raise ~here ?cr ?hide_positions (fun () -> f elt));
+    let crs = Atomic.get crs |> List.rev in
+    if List.is_empty crs then Ok () else Error crs)
   |> Result.iter_error ~f:(fun (input, output) ->
     print_s [%message "quickcheck: test failed" (input : M.t)];
     List.iter output ~f:print_endline)
@@ -804,25 +813,19 @@ let test_compare
             (compare_x_z : int)])
   in
   let test m ~f = quickcheck_m ~here ?config ?cr ?hide_positions m ~f in
-  test
-    (module M)
-    ~f:(fun x ->
-      check_reflexive x;
-      check_asymmetric x x;
-      check_transitive x x x);
-  test
-    (module Tuple2 (M))
-    ~f:(fun (x, y) ->
-      check_asymmetric x y;
-      check_transitive x x y;
-      check_transitive x y x;
-      check_transitive y x x);
-  test
-    (module Tuple3 (M))
-    ~f:(fun (x, y, z) ->
-      check_transitive x y z;
-      check_transitive x z y;
-      check_transitive y x z)
+  test (module M) ~f:(fun x ->
+    check_reflexive x;
+    check_asymmetric x x;
+    check_transitive x x x);
+  test (module Tuple2 (M)) ~f:(fun (x, y) ->
+    check_asymmetric x y;
+    check_transitive x x y;
+    check_transitive x y x;
+    check_transitive y x x);
+  test (module Tuple3 (M)) ~f:(fun (x, y, z) ->
+    check_transitive x y z;
+    check_transitive x z y;
+    check_transitive y x z)
 ;;
 
 let test_equal
@@ -873,25 +876,19 @@ let test_equal
     | false, false -> ()
   in
   let test m ~f = quickcheck_m ~here ?config ?cr ?hide_positions m ~f in
-  test
-    (module M)
-    ~f:(fun x ->
-      check_reflexive x;
-      check_symmetric x x;
-      check_transitive x x x);
-  test
-    (module Tuple2 (M))
-    ~f:(fun (x, y) ->
-      check_symmetric x y;
-      check_transitive x x y;
-      check_transitive x y x;
-      check_transitive y x x);
-  test
-    (module Tuple3 (M))
-    ~f:(fun (x, y, z) ->
-      check_transitive x y z;
-      check_transitive x z y;
-      check_transitive y x z)
+  test (module M) ~f:(fun x ->
+    check_reflexive x;
+    check_symmetric x x;
+    check_transitive x x x);
+  test (module Tuple2 (M)) ~f:(fun (x, y) ->
+    check_symmetric x y;
+    check_transitive x x y;
+    check_transitive x y x;
+    check_transitive y x x);
+  test (module Tuple3 (M)) ~f:(fun (x, y, z) ->
+    check_transitive x y z;
+    check_transitive x z y;
+    check_transitive y x z)
 ;;
 
 let test_compare_and_equal
@@ -919,15 +916,9 @@ let test_compare_and_equal
             (compare_x_y : int)
             (equal_x_y : bool)]
   in
-  quickcheck_m
-    ~here
-    ?config
-    ?cr
-    ?hide_positions
-    (module Tuple2 (M))
-    ~f:(fun (x, y) ->
-      check_agreement x y;
-      check_agreement y x)
+  quickcheck_m ~here ?config ?cr ?hide_positions (module Tuple2 (M)) ~f:(fun (x, y) ->
+    check_agreement x y;
+    check_agreement y x)
 ;;
 
 let with_sexp_round_floats f ~significant_digits =

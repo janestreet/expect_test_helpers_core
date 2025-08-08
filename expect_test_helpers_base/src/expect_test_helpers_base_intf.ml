@@ -8,7 +8,7 @@ module CR = struct
     | CR_someday
     | Comment
     | Suppress
-  [@@deriving sexp_of]
+  [@@deriving sexp_of ~portable]
 end
 
 module Sexp_style = struct
@@ -16,7 +16,7 @@ module Sexp_style = struct
     | To_string_mach
     | To_string_hum
     | Pretty of Sexp_pretty.Config.t
-  [@@deriving sexp_of]
+  [@@deriving sexp_of ~portable]
 end
 
 module type With_compare = sig
@@ -612,14 +612,14 @@ module type Expect_test_helpers_base = sig
 
   (** [sexp_style] determines the sexp format used by [sexp_to_string], [print_s], and
       other functions in this module. Defaults to [Sexp_style.default_pretty]. *)
-  val sexp_style : Sexp_style.t ref
+  val sexp_style : Sexp_style.t Dynamic.t
 
   (** [on_print_cr] determines the behavior of all functions above that print CRs, such as
       [print_cr] and [require]. The rendered string form of the CR is passed to
-      [!on_print_cr]. The default value is [print_endline]; this can be overridden to
-      replace or extend the default behavior. For example, some testing harnesses may
-      choose to abort a series of tests after the first CR is printed. *)
-  val on_print_cr : (string -> unit) ref
+      [Dynamic.get on_print_cr]. The default value is [print_endline]; this can be
+      overridden to replace or extend the default behavior. For example, some testing
+      harnesses may choose to abort a series of tests after the first CR is printed. *)
+  val on_print_cr : (string -> unit) Dynamic.t
 
   (** [with_sexp_round_floats] rounds floats when making sexp strings. The effect lasts
       for the duration of the function you pass, after which the previous behavior (full
