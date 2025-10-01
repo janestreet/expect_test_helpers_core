@@ -147,9 +147,21 @@ let expect_test_output ?(here = Stdlib.Lexing.dummy_pos) () =
 ;;
 
 let with_empty_expect_test_output ?(here = Stdlib.Lexing.dummy_pos) f =
-  (Ppx_expect_runtime.For_external.with_empty_test_output [@alert "-ppx_expect_runtime"])
-    ~here
-    f
+  let frame =
+    (Ppx_expect_runtime.For_external.push_output_exn [@alert "-ppx_expect_runtime"]) ~here
+  in
+  Exn.protect ~f ~finally:(fun () ->
+    match
+      (Ppx_expect_runtime.For_external.pop_output_exn [@alert "-ppx_expect_runtime"])
+        ~here
+        frame
+    with
+    | Match -> ()
+    | Mismatch ->
+      raise_s
+        [%message
+          "[with_empty_expect_test_output]: nesting mismatch"
+            "check uses of [with_empty_expect_test_output_async]"])
 ;;
 
 let raise_if_output_did_not_match ?message ?(here = Stdlib.Lexing.dummy_pos) () =
@@ -281,7 +293,7 @@ let require
 ;;
 
 [%%template
-[@@@kind.default k = (value, float64, bits32, bits64, word)]
+[@@@kind.default k = (value_or_null, float64, bits32, bits64, word)]
 
 let require_equal
   (type a)

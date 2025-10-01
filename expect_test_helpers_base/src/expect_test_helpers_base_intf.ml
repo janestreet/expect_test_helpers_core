@@ -314,7 +314,7 @@ module type Expect_test_helpers_base = sig
     -> unit
 
   [%%template:
-  [@@@kind.default k = (value, float64, bits32, bits64, word)]
+  [@@@kind.default k = (value_or_null, float64, bits32, bits64, word)]
 
   (** [require_equal] compares its two arguments using the equality predicate of the
       provided module. If the comparison fails, prints a message that renders the
