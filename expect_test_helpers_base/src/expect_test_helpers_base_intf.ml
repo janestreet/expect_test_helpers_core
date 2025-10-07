@@ -8,7 +8,7 @@ module CR = struct
     | CR_someday
     | Comment
     | Suppress
-  [@@deriving sexp_of]
+  [@@deriving sexp_of ~portable]
 end
 
 module Sexp_style = struct
@@ -16,7 +16,7 @@ module Sexp_style = struct
     | To_string_mach
     | To_string_hum
     | Pretty of Sexp_pretty.Config.t
-  [@@deriving sexp_of]
+  [@@deriving sexp_of ~portable]
 end
 
 module type With_compare = sig
@@ -70,7 +70,7 @@ end
 
 module Quickcheck = Base_quickcheck
 
-module type Expect_test_helpers_base = sig
+module type Expect_test_helpers_base = sig @@ portable
   (** Helpers for producing output inside [let%expect_test]. Designed for code using
       [Base]. See also [Expect_test_helpers_core] and [Expect_test_helpers_async]. *)
 
@@ -112,7 +112,7 @@ module type Expect_test_helpers_base = sig
     val simple_pretty : t
   end
 
-  module Expectation : sig
+  module (Expectation @@ nonportable) : sig
     (** Tools for managing [[%expectation]] blocks. *)
 
     (** All functions in this module raise if called outside an expect test. *)
@@ -218,10 +218,10 @@ module type Expect_test_helpers_base = sig
   val sexp_to_string : ?hide_positions:bool (** default is [false] *) -> Sexp.t -> string
 
   (** Substitutes [with_] for every occurrence of [pattern] in a string. *)
-  val replace : string -> pattern:string -> with_:string -> string
+  val replace : string -> pattern:string @ local -> with_:string @ local -> string
 
   (** Like [replace], for every atom in a sexp. *)
-  val replace_s : Sexp.t -> pattern:string -> with_:string -> Sexp.t
+  val replace_s : Sexp.t -> pattern:string @ local -> with_:string @ local -> Sexp.t
 
   (** Applies [f] at every node in the given sexp, top-down, recurring on the contents of
       the output. The word "smash" is used as in the sexp command-line tool's query
@@ -241,7 +241,7 @@ module type Expect_test_helpers_base = sig
   (** Behaves like [[%expect.output]].
 
       Raises if called when not running an expect test. *)
-  val expect_test_output : here:[%call_pos] -> unit -> string
+  val expect_test_output : here:[%call_pos] -> unit -> string @@ nonportable
 
   (** Sets aside output generated up to now. Within the callback, only new output will be
       captured by [[%expect]], [[%expect.output]], and the like. After the callback, the
@@ -251,7 +251,7 @@ module type Expect_test_helpers_base = sig
       without having to remove and re-add anything prior. For example, you could run some
       noisy tests inside this, then decide to erase their output if they did not trigger
       [on_print_cr] (below). *)
-  val with_empty_expect_test_output : here:[%call_pos] -> local_ (unit -> 'a) -> 'a
+  val with_empty_expect_test_output : here:[%call_pos] -> (unit -> 'a) @ local once -> 'a
 
   (** Raises an error if, in the current test:
       1. Control flow has reached a [[%expect.unreachable]] node or
@@ -310,7 +310,7 @@ module type Expect_test_helpers_base = sig
     -> unit
 
   [%%template:
-  [@@@kind.default k = (value, float64, bits32, bits64, word)]
+  [@@@kind.default k = (value_or_null, float64, bits32, bits64, word)]
 
   (** [require_equal] compares its two arguments using the equality predicate of the
       provided module. If the comparison fails, prints a message that renders the
@@ -395,7 +395,7 @@ module type Expect_test_helpers_base = sig
     -> ?hide_positions:bool (** default is [false] when [cr=CR], [true] otherwise *)
     -> ?show_backtrace:bool (** default is [false] *)
     -> here:[%call_pos]
-    -> local_ (unit -> unit)
+    -> (unit -> unit) @ local once
     -> unit
 
   (** [require_does_raise] is like [show_raise], but additionally prints a CR if the
@@ -405,7 +405,7 @@ module type Expect_test_helpers_base = sig
     -> ?hide_positions:bool (** default is [false] *)
     -> ?show_backtrace:bool (** default is [false] *)
     -> here:[%call_pos]
-    -> local_ (unit -> _)
+    -> (unit -> _) @ local once
     -> unit
 
   (** [require_some option] is like [require (is_some option)], with improved output. If
@@ -558,6 +558,7 @@ module type Expect_test_helpers_base = sig
     -> f:('a -> unit)
     -> 'a Quickcheck.Generator.t
     -> unit
+    @@ nonportable
 
   (** [quickcheck_m] is similar to [Base_quickcheck.Test.run]. It stops after the first
       iteration that raises or prints a CR, as detected by [on_print_cr]. *)
@@ -571,6 +572,7 @@ module type Expect_test_helpers_base = sig
     -> (module Base_quickcheck.Test.S with type t = 'a)
     -> f:('a -> unit)
     -> unit
+    @@ nonportable
 
   (** [test_compare] uses quickcheck to test that a compare function is reflexive,
       asymmetric, and transitive. *)
@@ -582,6 +584,7 @@ module type Expect_test_helpers_base = sig
     -> ?hide_positions:bool (** default is [false] when [cr=CR], [true] otherwise *)
     -> (module With_quickcheck_and_compare)
     -> unit
+    @@ nonportable
 
   (** [test_equal] uses quickcheck to test that an equal function is reflexive, symmetric,
       and transitive. *)
@@ -593,6 +596,7 @@ module type Expect_test_helpers_base = sig
     -> ?hide_positions:bool (** default is [false] when [cr=CR], [true] otherwise *)
     -> (module With_quickcheck_and_equal)
     -> unit
+    @@ nonportable
 
   (** [test_compare_and_equal] uses quickcheck to test that compare and equal functions
       satisfy [test_compare] and [test_equal], and that their results are consistent with
@@ -605,17 +609,18 @@ module type Expect_test_helpers_base = sig
     -> ?hide_positions:bool (** default is [false] when [cr=CR], [true] otherwise *)
     -> (module With_quickcheck_and_compare_and_equal)
     -> unit
+    @@ nonportable
 
   (** [sexp_style] determines the sexp format used by [sexp_to_string], [print_s], and
       other functions in this module. Defaults to [Sexp_style.default_pretty]. *)
-  val sexp_style : Sexp_style.t ref
+  val sexp_style : Sexp_style.t Dynamic.t
 
   (** [on_print_cr] determines the behavior of all functions above that print CRs, such as
       [print_cr] and [require]. The rendered string form of the CR is passed to
-      [!on_print_cr]. The default value is [print_endline]; this can be overridden to
-      replace or extend the default behavior. For example, some testing harnesses may
-      choose to abort a series of tests after the first CR is printed. *)
-  val on_print_cr : (string -> unit) ref
+      [Dynamic.get on_print_cr]. The default value is [print_endline]; this can be
+      overridden to replace or extend the default behavior. For example, some testing
+      harnesses may choose to abort a series of tests after the first CR is printed. *)
+  val on_print_cr : (string -> unit) Dynamic.t
 
   (** [with_sexp_round_floats] rounds floats when making sexp strings. The effect lasts
       for the duration of the function you pass, after which the previous behavior (full
@@ -624,5 +629,9 @@ module type Expect_test_helpers_base = sig
 
   (** Updates the currently collected expect test output to hide positions. Equivalent to
       [print_string ~hide_positions:true [%expect.output]]. *)
-  val hide_positions_in_expect_test_output : here:[%call_pos] -> unit -> unit
+  val hide_positions_in_expect_test_output
+    :  here:[%call_pos]
+    -> unit
+    -> unit
+    @@ nonportable
 end

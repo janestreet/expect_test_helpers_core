@@ -179,7 +179,7 @@ module type Expect_test_helpers_core = sig
     -> ?hide_positions:bool (** default is [false] *)
     -> Allocation_limit.t
     -> here:[%call_pos]
-    -> local_ (unit -> ('a : k))
+    -> (unit -> ('a : k)) @ local once
     -> 'a
 
   (** Like [require_allocation_does_not_exceed], for functions producing local values. *)
@@ -189,8 +189,8 @@ module type Expect_test_helpers_core = sig
     -> ?hide_positions:bool (** default is [false] *)
     -> Allocation_limit.t
     -> here:[%call_pos]
-    -> local_ (unit -> local_ ('a : k))
-    -> local_ 'a
+    -> (unit -> ('a : k) @ local) @ local once
+    -> 'a @ local
 
   (** [require_no_allocation here f] is equivalent to
       [require_allocation_does_not_exceed (Minor_words 0) here f].
@@ -201,7 +201,7 @@ module type Expect_test_helpers_core = sig
     -> ?print_limit:int
     -> ?hide_positions:bool (** default is [false] *)
     -> here:[%call_pos]
-    -> local_ (unit -> ('a : k))
+    -> (unit -> ('a : k)) @ local once
     -> 'a
 
   (** Like [require_no_allocation], for functions producing local values. *)
@@ -210,8 +210,8 @@ module type Expect_test_helpers_core = sig
     -> ?print_limit:int
     -> ?hide_positions:bool (** default is [false] *)
     -> here:[%call_pos]
-    -> local_ (unit -> local_ ('a : k))
-    -> local_ 'a]
+    -> (unit -> ('a : k) @ local) @ local once
+    -> 'a @ local]
 
   (**/**)
 
@@ -226,7 +226,7 @@ module type Expect_test_helpers_core = sig
       -> ?print_limit:int
       -> Allocation_limit.t
       -> here:[%call_pos]
-      -> local_ (unit -> local_ 'a)
-      -> local_ 'a
+      -> (unit -> 'a @ local) @ local once
+      -> 'a @ local
   end
 end
