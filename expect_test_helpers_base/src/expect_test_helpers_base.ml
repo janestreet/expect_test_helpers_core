@@ -90,10 +90,10 @@ let hide_positions_in_string =
   let expanders =
     Portable_lazy.from_fun (fun () ->
       [ (* This first pattern has an alphabetic prefix because we want to match exceptions
-            and their file positions without also matching timestamps.  However, [Re.Pcre]
-            doesn't implement back-references, precluding a simple substitution.  Instead,
-            we provide a length of matched data to copy into the output, effectively acting
-            like a back-reference in this special case. *)
+           and their file positions without also matching timestamps. However, [Re.Pcre]
+           doesn't implement back-references, precluding a simple substitution. Instead,
+           we provide a length of matched data to copy into the output, effectively acting
+           like a back-reference in this special case. *)
         "[a-zA-z]:[0-9]+:[0-9]+", 1, ":LINE:COL"
       ; "line [0-9]+:", 0, "line LINE:"
       ; "line [0-9]+, characters [0-9]+-[0-9]+", 0, "line LINE, characters C1-C2"
@@ -433,6 +433,7 @@ type try_with_result =
 let try_with
   ?raise_message
   ?(show_backtrace = false)
+  ?(sanitize = Fn.id)
   (type a)
   (f : unit -> a @ local once)
   =
@@ -444,17 +445,25 @@ let try_with
         if not show_backtrace then None else Some (Backtrace.Exn.most_recent ())
       in
       Dynamic.with_temporarily Backtrace.elide (not show_backtrace) ~f:(fun () ->
+        let exn = sanitize [%sexp (exn : exn)] in
         Raised
           [%message
             ""
               ~_:(raise_message : (string option[@sexp.option]))
-              ~_:(exn : exn)
+              ~_:(exn : Sexp.t)
               (backtrace : (Backtrace.t option[@sexp.option]))]))
   [@nontail]
 ;;
 
-let require_does_not_raise ?cr ?hide_positions ?show_backtrace ~(here : [%call_pos]) f =
-  match try_with f ?show_backtrace ~raise_message:"unexpectedly raised" with
+let require_does_not_raise
+  ?cr
+  ?hide_positions
+  ?sanitize
+  ?show_backtrace
+  ~(here : [%call_pos])
+  f
+  =
+  match try_with f ?show_backtrace ?sanitize ~raise_message:"unexpectedly raised" with
   | Did_not_raise -> ()
   | Raised message -> print_cr ?cr ?hide_positions ~here message
 ;;
@@ -462,11 +471,12 @@ let require_does_not_raise ?cr ?hide_positions ?show_backtrace ~(here : [%call_p
 let require_does_raise
   ?cr
   ?(hide_positions = false)
+  ?sanitize
   ?show_backtrace
   ~(here : [%call_pos])
   f
   =
-  match try_with f ?show_backtrace with
+  match try_with f ?show_backtrace ?sanitize with
   | Raised message -> print_s ~hide_positions message
   | Did_not_raise -> print_cr ?cr ~hide_positions ~here [%message "did not raise"]
 ;;
@@ -690,16 +700,16 @@ let print_and_check_sexpable
   print_and_check_round_trip ?cr ?hide_positions ~here (module T) [ (module Conv) ] list
 ;;
 
-let show_raise (type a) ?hide_positions ?show_backtrace (f : unit -> a) =
+let show_raise (type a) ?hide_positions ?sanitize ?show_backtrace (f : unit -> a) =
   print_s
     ?hide_positions
-    (match try_with f ?show_backtrace ~raise_message:"raised" with
+    (match try_with f ?show_backtrace ?sanitize ~raise_message:"raised" with
      | Did_not_raise -> [%message "did not raise"]
      | Raised message -> message)
 ;;
 
 let quickcheck_m
-  (type a)
+  (type a : value_or_null)
   ~(here : [%call_pos])
   ?config
   ?cr
@@ -710,8 +720,8 @@ let quickcheck_m
   =
   Base_quickcheck.Test.result ?config ?examples (module M) ~f:(fun elt ->
     let crs = Atomic.make [] in
-    (* We set [on_print_cr] to accumulate CRs in [crs]; it affects both [f elt] as
-         well as our call to [require_does_not_raise]. *)
+    (* We set [on_print_cr] to accumulate CRs in [crs]; it affects both [f elt] as well as
+       our call to [require_does_not_raise]. *)
     Dynamic.with_temporarily
       on_print_cr
       (fun cr -> Atomic.update crs ~pure_f:(fun crs -> cr :: crs))
@@ -724,7 +734,7 @@ let quickcheck_m
 ;;
 
 let quickcheck
-  (type a)
+  (type a : value_or_null)
   ~(here : [%call_pos])
   ?cr
   ?hide_positions

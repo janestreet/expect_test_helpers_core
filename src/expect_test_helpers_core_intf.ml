@@ -14,8 +14,7 @@ module type With_comparable = sig
   include Comparator.S with type t := t
 
   (* [Set] and [Map] submodules are here because we specifically want to test whether they
-     have been constructed correctly, as opposed to testing the functor that creates
-     them. *)
+     have been constructed correctly, as opposed to testing the functor that creates them. *)
 
   module Set : sig
     type t = (key, comparator_witness) Set.t [@@deriving sexp_of]
@@ -145,7 +144,7 @@ module type Expect_test_helpers_core = sig
   end
 
   [%%template:
-  [@@@kind.default k = (value, float64, bits32, bits64, word)]
+  [@@@kind.default k = (value_or_null, float64, bits32, bits64, word)]
 
   (** [require_allocation_does_not_exceed] is a specialized form of [require] that only
       produces output when [f ()] allocates more than the given limits. The output will
@@ -174,22 +173,24 @@ module type Expect_test_helpers_core = sig
 
       See documentation above about CRs and workflows for failing allocation tests. *)
   val require_allocation_does_not_exceed
-    :  ?cr:CR.t
+    : ('a : k).
+    ?cr:CR.t
     -> ?print_limit:int (** default is [1_000] *)
     -> ?hide_positions:bool (** default is [false] *)
     -> Allocation_limit.t
     -> here:[%call_pos]
-    -> (unit -> ('a : k)) @ local once
+    -> (unit -> 'a) @ local once
     -> 'a
 
   (** Like [require_allocation_does_not_exceed], for functions producing local values. *)
   val require_allocation_does_not_exceed_local
-    :  ?cr:CR.t
+    : ('a : k).
+    ?cr:CR.t
     -> ?print_limit:int (** default is [1_000] *)
     -> ?hide_positions:bool (** default is [false] *)
     -> Allocation_limit.t
     -> here:[%call_pos]
-    -> (unit -> ('a : k) @ local) @ local once
+    -> (unit -> 'a @ local) @ local once
     -> 'a @ local
 
   (** [require_no_allocation here f] is equivalent to
@@ -197,20 +198,22 @@ module type Expect_test_helpers_core = sig
 
       See documentation above about CRs and workflows for failing allocation tests. *)
   val require_no_allocation
-    :  ?cr:CR.t
+    : ('a : k).
+    ?cr:CR.t
     -> ?print_limit:int
     -> ?hide_positions:bool (** default is [false] *)
     -> here:[%call_pos]
-    -> (unit -> ('a : k)) @ local once
+    -> (unit -> 'a) @ local once
     -> 'a
 
   (** Like [require_no_allocation], for functions producing local values. *)
   val require_no_allocation_local
-    :  ?cr:CR.t
+    : ('a : k).
+    ?cr:CR.t
     -> ?print_limit:int
     -> ?hide_positions:bool (** default is [false] *)
     -> here:[%call_pos]
-    -> (unit -> ('a : k) @ local) @ local once
+    -> (unit -> 'a @ local) @ local once
     -> 'a @ local]
 
   (**/**)

@@ -148,7 +148,7 @@ let print_and_check_stable_int63able_type
 ;;
 
 [%%template
-[@@@kind.default k = (value, float64, bits32, bits64, word)]
+[@@@kind.default k = (value_or_null, float64, bits32, bits64, word)]
 
 let require_allocation_does_not_exceed_local_private
   ?(cr = CR.CR)

@@ -322,30 +322,32 @@ module type Expect_test_helpers_base = sig @@ portable
     -> ?if_false_then_print_s:Sexp.t Lazy.t
     -> ?message:string
     -> here:[%call_pos]
-    -> (module With_equal with type t = ('a : k))
+    -> (module With_equal with type t = 'a)
     -> 'a
     -> 'a
     -> unit
 
   (** Like [require_equal], but derives an equality predicate from a comparison function. *)
   val require_compare_equal
-    :  ?cr:CR.t (** default is [CR] *)
+    : ('a : k).
+    ?cr:CR.t (** default is [CR] *)
     -> ?hide_positions:bool (** default is [false] when [cr=CR], [true] otherwise *)
     -> ?message:string
     -> here:[%call_pos]
-    -> (module With_compare with type t = ('a : k))
+    -> (module With_compare with type t = 'a)
     -> 'a
     -> 'a
     -> unit
 
   (** Like [require_equal] but instead requires that the arguments are *not* equal. *)
   val require_not_equal
-    :  ?cr:CR.t (** default is [CR] *)
+    : ('a : k).
+    ?cr:CR.t (** default is [CR] *)
     -> ?hide_positions:bool (** default is [false] when [cr=CR], [true] otherwise *)
     -> ?if_false_then_print_s:Sexp.t Lazy.t
     -> ?message:string
     -> here:[%call_pos]
-    -> (module With_equal with type t = ('a : k))
+    -> (module With_equal with type t = 'a)
     -> 'a
     -> 'a
     -> unit
@@ -353,11 +355,12 @@ module type Expect_test_helpers_base = sig @@ portable
   (** Like [require_not_equal], but derives an equality predicate from a comparison
       function. *)
   val require_compare_not_equal
-    :  ?cr:CR.t (** default is [CR] *)
+    : ('a : k).
+    ?cr:CR.t (** default is [CR] *)
     -> ?hide_positions:bool (** default is [false] when [cr=CR], [true] otherwise *)
     -> ?message:string
     -> here:[%call_pos]
-    -> (module With_compare with type t = ('a : k))
+    -> (module With_compare with type t = 'a)
     -> 'a
     -> 'a
     -> unit]
@@ -378,9 +381,12 @@ module type Expect_test_helpers_base = sig @@ portable
       doesn't have to put an [ignore] inside the body of an [f] that is expected to raise.
       [~hide_positions:true] operates as in [print_s], to make output less fragile. Using
       [~show_backtrace:true] will result in a CR in the expectation, but it's still
-      available here as it is still valuable when initially writing tests and debugging. *)
+      available here as it is still valuable when initially writing tests and debugging.
+      [~sanitize] is applied to the exception sexp before hiding the positions, and can be
+      used to keep some unstable fields out of the error message. *)
   val show_raise
     :  ?hide_positions:bool (** default is [false] *)
+    -> ?sanitize:(Sexp.t -> Sexp.t) (** default is Fn.id *)
     -> ?show_backtrace:bool (** default is [false] *)
     -> (unit -> _)
     -> unit
@@ -393,6 +399,7 @@ module type Expect_test_helpers_base = sig @@ portable
   val require_does_not_raise
     :  ?cr:CR.t (** default is [CR] *)
     -> ?hide_positions:bool (** default is [false] when [cr=CR], [true] otherwise *)
+    -> ?sanitize:(Sexp.t -> Sexp.t) (** default is Fn.id *)
     -> ?show_backtrace:bool (** default is [false] *)
     -> here:[%call_pos]
     -> (unit -> unit) @ local once
@@ -403,6 +410,7 @@ module type Expect_test_helpers_base = sig @@ portable
   val require_does_raise
     :  ?cr:CR.t (** default is [CR] *)
     -> ?hide_positions:bool (** default is [false] *)
+    -> ?sanitize:(Sexp.t -> Sexp.t) (** default is Fn.id *)
     -> ?show_backtrace:bool (** default is [false] *)
     -> here:[%call_pos]
     -> (unit -> _) @ local once
@@ -545,7 +553,8 @@ module type Expect_test_helpers_base = sig @@ portable
       2. [quickcheck] stops after the first iteration that raises or prints a CR, as
          detected by [on_print_cr]. *)
   val quickcheck
-    :  here:[%call_pos]
+    : ('a : value_or_null).
+    here:[%call_pos]
     -> ?cr:CR.t (** default is [CR] *)
     -> ?hide_positions:bool (** default is [false] when [cr=CR], [true] otherwise *)
     -> ?seed:Quickcheck.Test.Config.Seed.t
@@ -563,7 +572,8 @@ module type Expect_test_helpers_base = sig @@ portable
   (** [quickcheck_m] is similar to [Base_quickcheck.Test.run]. It stops after the first
       iteration that raises or prints a CR, as detected by [on_print_cr]. *)
   val quickcheck_m
-    :  here:[%call_pos]
+    : ('a : value_or_null).
+    here:[%call_pos]
     -> ?config:Base_quickcheck.Test.Config.t
          (** default is [Base_quickcheck.Test.default_config] *)
     -> ?cr:CR.t (** default is [CR] *)
