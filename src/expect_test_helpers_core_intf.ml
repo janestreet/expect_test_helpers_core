@@ -14,8 +14,7 @@ module type With_comparable = sig
   include Comparator.S with type t := t
 
   (* [Set] and [Map] submodules are here because we specifically want to test whether they
-     have been constructed correctly, as opposed to testing the functor that creates
-     them. *)
+     have been constructed correctly, as opposed to testing the functor that creates them. *)
 
   module Set : sig
     type t = (key, comparator_witness) Set.t [@@deriving sexp_of]
@@ -86,6 +85,7 @@ module type Expect_test_helpers_core = sig
     :  ?cr:CR.t (** default is [CR] *)
     -> ?hide_positions:bool (** default is [false] when [cr=CR], [true] otherwise *)
     -> ?max_binable_length:int (** default is [Int.max_value] *)
+    -> ?sexp_style:Sexp_style.t (** default is [Dynamic.get sexp_style] *)
     -> ?here:Stdlib.Lexing.position
     -> (module Stable_without_comparator with type t = 'a)
     -> 'a list
@@ -97,6 +97,7 @@ module type Expect_test_helpers_core = sig
     :  ?cr:CR.t (** default is [CR] *)
     -> ?hide_positions:bool (** default is [false] when [cr=CR], [true] otherwise *)
     -> ?max_binable_length:int (** default is [Int.max_value] *)
+    -> ?sexp_style:Sexp_style.t (** default is [Dynamic.get sexp_style] *)
     -> ?here:Stdlib.Lexing.position
     -> (module Stable_int63able_without_comparator with type t = 'a)
     -> 'a list
@@ -110,6 +111,7 @@ module type Expect_test_helpers_core = sig
   val print_and_check_container_sexps
     :  ?cr:CR.t (** default is [CR] *)
     -> ?hide_positions:bool (** default is [false] when [cr=CR], [true] otherwise *)
+    -> ?sexp_style:Sexp_style.t (** default is [Dynamic.get sexp_style] *)
     -> ?here:Stdlib.Lexing.position
     -> (module With_containers with type t = 'a)
     -> 'a list
@@ -120,6 +122,7 @@ module type Expect_test_helpers_core = sig
   val print_and_check_comparable_sexps
     :  ?cr:CR.t (** default is [CR] *)
     -> ?hide_positions:bool (** default is [false] when [cr=CR], [true] otherwise *)
+    -> ?sexp_style:Sexp_style.t (** default is [Dynamic.get sexp_style] *)
     -> ?here:Stdlib.Lexing.position
     -> (module With_comparable with type t = 'a)
     -> 'a list
@@ -130,6 +133,7 @@ module type Expect_test_helpers_core = sig
   val print_and_check_hashable_sexps
     :  ?cr:CR.t (** default is [CR] *)
     -> ?hide_positions:bool (** default is [false] when [cr=CR], [true] otherwise *)
+    -> ?sexp_style:Sexp_style.t (** default is [Dynamic.get sexp_style] *)
     -> ?here:Stdlib.Lexing.position
     -> (module With_hashable with type t = 'a)
     -> 'a list
@@ -145,7 +149,7 @@ module type Expect_test_helpers_core = sig
   end
 
   [%%template:
-  [@@@kind.default k = (value, float64, bits32, bits64, word)]
+  [@@@kind.default k = (value_or_null, float64, bits32, bits64, word)]
 
   (** [require_allocation_does_not_exceed] is a specialized form of [require] that only
       produces output when [f ()] allocates more than the given limits. The output will
@@ -174,9 +178,11 @@ module type Expect_test_helpers_core = sig
 
       See documentation above about CRs and workflows for failing allocation tests. *)
   val require_allocation_does_not_exceed
-    :  ?cr:CR.t
+    : 'a.
+    ?cr:CR.t
     -> ?print_limit:int (** default is [1_000] *)
     -> ?hide_positions:bool (** default is [false] *)
+    -> ?sexp_style:Sexp_style.t (** default is [Dynamic.get sexp_style] *)
     -> Allocation_limit.t
     -> ?here:Stdlib.Lexing.position
     -> (unit -> 'a)
@@ -184,9 +190,11 @@ module type Expect_test_helpers_core = sig
 
   (** Like [require_allocation_does_not_exceed], for functions producing local values. *)
   val require_allocation_does_not_exceed_local
-    :  ?cr:CR.t
+    : 'a.
+    ?cr:CR.t
     -> ?print_limit:int (** default is [1_000] *)
     -> ?hide_positions:bool (** default is [false] *)
+    -> ?sexp_style:Sexp_style.t (** default is [Dynamic.get sexp_style] *)
     -> Allocation_limit.t
     -> ?here:Stdlib.Lexing.position
     -> (unit -> 'a)
@@ -197,18 +205,22 @@ module type Expect_test_helpers_core = sig
 
       See documentation above about CRs and workflows for failing allocation tests. *)
   val require_no_allocation
-    :  ?cr:CR.t
+    : 'a.
+    ?cr:CR.t
     -> ?print_limit:int
     -> ?hide_positions:bool (** default is [false] *)
+    -> ?sexp_style:Sexp_style.t (** default is [Dynamic.get sexp_style] *)
     -> ?here:Stdlib.Lexing.position
     -> (unit -> 'a)
     -> 'a
 
   (** Like [require_no_allocation], for functions producing local values. *)
   val require_no_allocation_local
-    :  ?cr:CR.t
+    : 'a.
+    ?cr:CR.t
     -> ?print_limit:int
     -> ?hide_positions:bool (** default is [false] *)
+    -> ?sexp_style:Sexp_style.t (** default is [Dynamic.get sexp_style] *)
     -> ?here:Stdlib.Lexing.position
     -> (unit -> 'a)
     -> 'a]
@@ -224,6 +236,7 @@ module type Expect_test_helpers_core = sig
       :  ?cr:CR.t
       -> ?hide_positions:bool
       -> ?print_limit:int
+      -> ?sexp_style:Sexp_style.t (** default is [Dynamic.get sexp_style] *)
       -> Allocation_limit.t
       -> ?here:Stdlib.Lexing.position
       -> (unit -> 'a)
