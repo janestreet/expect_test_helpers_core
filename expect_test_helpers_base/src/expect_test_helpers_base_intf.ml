@@ -6,6 +6,7 @@ module CR = struct
     | CR_soon
     | CR_soon_for of string
     | CR_someday
+    | CR_for_child
     | Comment
     | Suppress
   [@@deriving sexp_of ~portable]
@@ -32,7 +33,7 @@ module type With_equal = sig
 end
 
 module type With_round_trip = sig
-  type t
+  type t : value_or_null
   type repr [@@deriving sexp_of]
 
   val to_repr : t -> repr
@@ -215,7 +216,11 @@ module type Expect_test_helpers_base = sig @@ portable
   (** Renders an s-expression as a string. With [~hide_positions:true], patterns in the
       string that match OCaml-style file positions are modified to hide the line number,
       column number, and character positions, to make output less fragile. *)
-  val sexp_to_string : ?hide_positions:bool (** default is [false] *) -> Sexp.t -> string
+  val sexp_to_string
+    :  ?hide_positions:bool (** default is [false] *)
+    -> ?sexp_style:Sexp_style.t (** default is [Dynamic.get sexp_style] *)
+    -> Sexp.t
+    -> string
 
   (** Substitutes [with_] for every occurrence of [pattern] in a string. *)
   val replace : string -> pattern:string @ local -> with_:string @ local -> string
@@ -233,7 +238,11 @@ module type Expect_test_helpers_base = sig @@ portable
 
   (** For printing an s-expression to stdout. [hide_positions] works as in
       [sexp_to_string]. *)
-  val print_s : ?hide_positions:bool (** default is [false] *) -> Sexp.t -> unit
+  val print_s
+    :  ?hide_positions:bool (** default is [false] *)
+    -> ?sexp_style:Sexp_style.t (** default is [Dynamic.get sexp_style] *)
+    -> Sexp.t
+    -> unit
 
   val print_string : ?hide_positions:bool (** default is [false] *) -> string -> unit
   val print_endline : ?hide_positions:bool (** default is [false] *) -> string -> unit
@@ -290,6 +299,7 @@ module type Expect_test_helpers_base = sig @@ portable
   val print_cr
     :  ?cr:CR.t (** default is [CR] *)
     -> ?hide_positions:bool (** default is [false] when [cr=CR], [true] otherwise *)
+    -> ?sexp_style:Sexp_style.t (** default is [Dynamic.get sexp_style] *)
     -> here:[%call_pos]
     -> Sexp.t
     -> unit
@@ -305,8 +315,20 @@ module type Expect_test_helpers_base = sig @@ portable
     :  ?cr:CR.t (** default is [CR] *)
     -> ?hide_positions:bool (** default is [false] when [cr=CR], [true] otherwise *)
     -> ?if_false_then_print_s:Sexp.t Lazy.t
+    -> ?sexp_style:Sexp_style.t (** default is [Dynamic.get sexp_style] *)
     -> here:[%call_pos]
     -> bool
+    -> unit
+
+  (** Like [require]. Takes a positional closure instead of an optional [lazy] for
+      [if_false_then_print_s]. *)
+  val print_cr_if_false
+    :  ?cr:CR.t (** default is [CR] *)
+    -> ?hide_positions:bool (** default is [false] when [cr=CR], [true] otherwise *)
+    -> ?sexp_style:Sexp_style.t (** default is [Dynamic.get sexp_style] *)
+    -> here:[%call_pos]
+    -> bool
+    -> (unit -> Sexp.t) @ local
     -> unit
 
   [%%template:
@@ -321,6 +343,7 @@ module type Expect_test_helpers_base = sig @@ portable
     -> ?hide_positions:bool (** default is [false] when [cr=CR], [true] otherwise *)
     -> ?if_false_then_print_s:Sexp.t Lazy.t
     -> ?message:string
+    -> ?sexp_style:Sexp_style.t (** default is [Dynamic.get sexp_style] *)
     -> here:[%call_pos]
     -> (module With_equal with type t = 'a)
     -> 'a
@@ -333,6 +356,7 @@ module type Expect_test_helpers_base = sig @@ portable
     ?cr:CR.t (** default is [CR] *)
     -> ?hide_positions:bool (** default is [false] when [cr=CR], [true] otherwise *)
     -> ?message:string
+    -> ?sexp_style:Sexp_style.t (** default is [Dynamic.get sexp_style] *)
     -> here:[%call_pos]
     -> (module With_compare with type t = 'a)
     -> 'a
@@ -346,6 +370,7 @@ module type Expect_test_helpers_base = sig @@ portable
     -> ?hide_positions:bool (** default is [false] when [cr=CR], [true] otherwise *)
     -> ?if_false_then_print_s:Sexp.t Lazy.t
     -> ?message:string
+    -> ?sexp_style:Sexp_style.t (** default is [Dynamic.get sexp_style] *)
     -> here:[%call_pos]
     -> (module With_equal with type t = 'a)
     -> 'a
@@ -359,6 +384,7 @@ module type Expect_test_helpers_base = sig @@ portable
     ?cr:CR.t (** default is [CR] *)
     -> ?hide_positions:bool (** default is [false] when [cr=CR], [true] otherwise *)
     -> ?message:string
+    -> ?sexp_style:Sexp_style.t (** default is [Dynamic.get sexp_style] *)
     -> here:[%call_pos]
     -> (module With_compare with type t = 'a)
     -> 'a
@@ -371,6 +397,7 @@ module type Expect_test_helpers_base = sig @@ portable
     :  ?cr:CR.t (** default is [CR] *)
     -> ?hide_positions:bool (** default is [false] when [cr=CR], [true] otherwise *)
     -> ?names:string * string (** default is ["first", "second"] *)
+    -> ?sexp_style:Sexp_style.t (** default is [Dynamic.get sexp_style] *)
     -> here:[%call_pos]
     -> ('elt, 'cmp) Set.t
     -> ('elt, 'cmp) Set.t
@@ -387,6 +414,7 @@ module type Expect_test_helpers_base = sig @@ portable
   val show_raise
     :  ?hide_positions:bool (** default is [false] *)
     -> ?sanitize:(Sexp.t -> Sexp.t) (** default is Fn.id *)
+    -> ?sexp_style:Sexp_style.t (** default is [Dynamic.get sexp_style] *)
     -> ?show_backtrace:bool (** default is [false] *)
     -> (unit -> _)
     -> unit
@@ -400,6 +428,7 @@ module type Expect_test_helpers_base = sig @@ portable
     :  ?cr:CR.t (** default is [CR] *)
     -> ?hide_positions:bool (** default is [false] when [cr=CR], [true] otherwise *)
     -> ?sanitize:(Sexp.t -> Sexp.t) (** default is Fn.id *)
+    -> ?sexp_style:Sexp_style.t (** default is to use [Dynamic.get sexp_style] *)
     -> ?show_backtrace:bool (** default is [false] *)
     -> here:[%call_pos]
     -> (unit -> unit) @ local once
@@ -411,6 +440,7 @@ module type Expect_test_helpers_base = sig @@ portable
     :  ?cr:CR.t (** default is [CR] *)
     -> ?hide_positions:bool (** default is [false] *)
     -> ?sanitize:(Sexp.t -> Sexp.t) (** default is Fn.id *)
+    -> ?sexp_style:Sexp_style.t (** default is to use [Dynamic.get sexp_style] *)
     -> ?show_backtrace:bool (** default is [false] *)
     -> here:[%call_pos]
     -> (unit -> _) @ local once
@@ -423,8 +453,19 @@ module type Expect_test_helpers_base = sig @@ portable
     :  ?cr:CR.t (** default is [CR] *)
     -> ?hide_positions:bool (** default is [false] when [cr=CR], [true] otherwise *)
     -> ?print_some:('some -> Sexp.t)
+    -> ?sexp_style:Sexp_style.t (** default is to use [Dynamic.get sexp_style] *)
     -> here:[%call_pos]
     -> 'some option
+    -> unit
+
+  (** As [require_some], except for [Or_null]. *)
+  val require_this
+    :  ?cr:CR.t (** default is [CR] *)
+    -> ?hide_positions:bool (** default is [false] when [cr=CR], [true] otherwise *)
+    -> ?print_some:('some -> Sexp.t)
+    -> ?sexp_style:Sexp_style.t (** default is to use [Dynamic.get sexp_style] *)
+    -> here:[%call_pos]
+    -> 'some or_null
     -> unit
 
   (** [require_none sexp_of_some option] is like [require (is_none option)], with improved
@@ -433,9 +474,20 @@ module type Expect_test_helpers_base = sig @@ portable
   val require_none
     :  ?cr:CR.t (** default is [CR] *)
     -> ?hide_positions:bool (** default is [false] when [cr=CR], [true] otherwise *)
+    -> ?sexp_style:Sexp_style.t (** default is to use [Dynamic.get sexp_style] *)
     -> here:[%call_pos]
     -> ('some -> Sexp.t)
     -> 'some option
+    -> unit
+
+  (** As [require_none], except for [Or_null] *)
+  val require_null
+    :  ?cr:CR.t (** default is [CR] *)
+    -> ?hide_positions:bool (** default is [false] when [cr=CR], [true] otherwise *)
+    -> ?sexp_style:Sexp_style.t (** default is to use [Dynamic.get sexp_style] *)
+    -> here:[%call_pos]
+    -> ('some -> Sexp.t)
+    -> 'some or_null
     -> unit
 
   (** [require_ok or_error] is like [require (is_ok or_error)], with improved output. If
@@ -445,6 +497,7 @@ module type Expect_test_helpers_base = sig @@ portable
     :  ?cr:CR.t (** default is [CR] *)
     -> ?hide_positions:bool (** default is [false] when [cr=CR], [true] otherwise *)
     -> ?print_ok:('ok -> Sexp.t)
+    -> ?sexp_style:Sexp_style.t (** default is to use [Dynamic.get sexp_style] *)
     -> here:[%call_pos]
     -> 'ok Or_error.t
     -> unit
@@ -456,6 +509,7 @@ module type Expect_test_helpers_base = sig @@ portable
     :  ?cr:CR.t (** default is [CR] *)
     -> ?hide_positions:bool (** default is [false] when [cr=CR], [true] otherwise *)
     -> ?print_error:bool (** default is [false] *)
+    -> ?sexp_style:Sexp_style.t (** default is to use [Dynamic.get sexp_style] *)
     -> here:[%call_pos]
     -> ('ok -> Sexp.t)
     -> 'ok Or_error.t
@@ -469,6 +523,7 @@ module type Expect_test_helpers_base = sig @@ portable
     :  ?cr:CR.t (** default is [CR] *)
     -> ?hide_positions:bool (** default is [false] when [cr=CR], [true] otherwise *)
     -> ?print_ok:('ok -> Sexp.t)
+    -> ?sexp_style:Sexp_style.t (** default is to use [Dynamic.get sexp_style] *)
     -> here:[%call_pos]
     -> ('error -> Sexp.t)
     -> ('ok, 'error) Result.t
@@ -482,6 +537,7 @@ module type Expect_test_helpers_base = sig @@ portable
     :  ?cr:CR.t (** default is [CR] *)
     -> ?hide_positions:bool (** default is [false] when [cr=CR], [true] otherwise *)
     -> ?print_error:('error -> Sexp.t)
+    -> ?sexp_style:Sexp_style.t (** default is to use [Dynamic.get sexp_style] *)
     -> here:[%call_pos]
     -> ('ok -> Sexp.t)
     -> ('ok, 'error) Result.t
@@ -495,6 +551,7 @@ module type Expect_test_helpers_base = sig @@ portable
     :  ?cr:CR.t (** default is [CR] *)
     -> ?hide_positions:bool (** default is [false] when [cr=CR], [true otherwise] *)
     -> ?print_first:('first -> Sexp.t)
+    -> ?sexp_style:Sexp_style.t (** default is to use [Dynamic.get sexp_style] *)
     -> here:[%call_pos]
     -> ('second -> Sexp.t)
     -> ('first, 'second) Either.t
@@ -508,6 +565,7 @@ module type Expect_test_helpers_base = sig @@ portable
     :  ?cr:CR.t (** default is [CR] *)
     -> ?hide_positions:bool (** default is [false] when [cr=CR], [true otherwise] *)
     -> ?print_second:('second -> Sexp.t)
+    -> ?sexp_style:Sexp_style.t (** default is to use [Dynamic.get sexp_style] *)
     -> here:[%call_pos]
     -> ('first -> Sexp.t)
     -> ('first, 'second) Either.t
@@ -518,6 +576,7 @@ module type Expect_test_helpers_base = sig @@ portable
   val print_and_check_stringable
     :  ?cr:CR.t (** default is [CR] *)
     -> ?hide_positions:bool (** default is [false] when [cr=CR], [true otherwise] *)
+    -> ?sexp_style:Sexp_style.t (** default is to use [Dynamic.get sexp_style] *)
     -> here:[%call_pos]
     -> (module With_stringable with type t = 'a)
     -> 'a list
@@ -528,6 +587,7 @@ module type Expect_test_helpers_base = sig @@ portable
   val print_and_check_sexpable
     :  ?cr:CR.t (** default is [CR] *)
     -> ?hide_positions:bool (** default is [false] when [cr=CR], [true otherwise] *)
+    -> ?sexp_style:Sexp_style.t (** default is to use [Dynamic.get sexp_style] *)
     -> here:[%call_pos]
     -> (module With_sexpable with type t = 'a)
     -> 'a list
@@ -537,8 +597,10 @@ module type Expect_test_helpers_base = sig @@ portable
       multiple representations, includes the [repr_name] of each in the output. Tests that
       [to_repr] and [of_repr] round-trip for each representation. *)
   val print_and_check_round_trip
-    :  ?cr:CR.t (** default is [CR] *)
+    : ('a : value_or_null).
+    ?cr:CR.t (** default is [CR] *)
     -> ?hide_positions:bool (** default is [false] when [cr=CR], [true otherwise] *)
+    -> ?sexp_style:Sexp_style.t (** default is to use [Dynamic.get sexp_style] *)
     -> here:[%call_pos]
     -> (module With_equal with type t = 'a)
     -> (module With_round_trip with type t = 'a) list
@@ -557,6 +619,7 @@ module type Expect_test_helpers_base = sig @@ portable
     here:[%call_pos]
     -> ?cr:CR.t (** default is [CR] *)
     -> ?hide_positions:bool (** default is [false] when [cr=CR], [true] otherwise *)
+    -> ?sexp_style:Sexp_style.t (** default is to use [Dynamic.get sexp_style] *)
     -> ?seed:Quickcheck.Test.Config.Seed.t
     -> ?sizes:int Sequence.t
     -> ?trials:int
@@ -579,6 +642,7 @@ module type Expect_test_helpers_base = sig @@ portable
     -> ?cr:CR.t (** default is [CR] *)
     -> ?examples:'a list
     -> ?hide_positions:bool (** default is [false] when [cr=CR], [true] otherwise *)
+    -> ?sexp_style:Sexp_style.t (** default is to use [Dynamic.get sexp_style] *)
     -> (module Base_quickcheck.Test.S with type t = 'a)
     -> f:('a -> unit)
     -> unit
@@ -592,6 +656,7 @@ module type Expect_test_helpers_base = sig @@ portable
          (** default is [Base_quickcheck.Test.default_config] *)
     -> ?cr:CR.t (** default is [CR] *)
     -> ?hide_positions:bool (** default is [false] when [cr=CR], [true] otherwise *)
+    -> ?sexp_style:Sexp_style.t (** default is to use [Dynamic.get sexp_style] *)
     -> (module With_quickcheck_and_compare)
     -> unit
     @@ nonportable
@@ -604,6 +669,7 @@ module type Expect_test_helpers_base = sig @@ portable
          (** default is [Base_quickcheck.Test.default_config] *)
     -> ?cr:CR.t (** default is [CR] *)
     -> ?hide_positions:bool (** default is [false] when [cr=CR], [true] otherwise *)
+    -> ?sexp_style:Sexp_style.t (** default is to use [Dynamic.get sexp_style] *)
     -> (module With_quickcheck_and_equal)
     -> unit
     @@ nonportable
@@ -617,6 +683,7 @@ module type Expect_test_helpers_base = sig @@ portable
          (** default is [Base_quickcheck.Test.default_config] *)
     -> ?cr:CR.t (** default is [CR] *)
     -> ?hide_positions:bool (** default is [false] when [cr=CR], [true] otherwise *)
+    -> ?sexp_style:Sexp_style.t (** default is to use [Dynamic.get sexp_style] *)
     -> (module With_quickcheck_and_compare_and_equal)
     -> unit
     @@ nonportable

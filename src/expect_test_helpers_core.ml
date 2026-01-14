@@ -29,6 +29,7 @@ let print_and_check_stable_internal
   ?cr
   ?hide_positions
   ?max_binable_length
+  ?sexp_style
   ~(here : [%call_pos])
   (module M : Stable_without_comparator with type t = a)
   (int63able : (module Int63able with type t = a) option)
@@ -42,6 +43,7 @@ let print_and_check_stable_internal
   in
   print_s
     ?hide_positions
+    ?sexp_style
     [%message
       "" ~bin_shape_digest:(Bin_prot.Shape.eval_to_digest_string M.bin_shape_t : string)];
   let sexp_m =
@@ -70,6 +72,7 @@ let print_and_check_stable_internal
             require
               ?cr
               ?hide_positions
+              ?sexp_style
               ~here
               (bin_io_length <= max_binable_length)
               ~if_false_then_print_s:
@@ -103,6 +106,7 @@ let print_and_check_stable_internal
   print_and_check_round_trip
     ?cr
     ?hide_positions
+    ?sexp_style
     ~here
     (module M)
     (List.concat [ [ sexp_m; bin_io_m ]; Option.to_list int63able_m ])
@@ -114,6 +118,7 @@ let print_and_check_stable_type
   ?cr
   ?hide_positions
   ?max_binable_length
+  ?sexp_style
   ~(here : [%call_pos])
   (module M : Stable_without_comparator with type t = a)
   list
@@ -122,6 +127,7 @@ let print_and_check_stable_type
     ?cr
     ?hide_positions
     ?max_binable_length
+    ?sexp_style
     ~here
     (module M)
     None
@@ -133,6 +139,7 @@ let print_and_check_stable_int63able_type
   ?cr
   ?hide_positions
   ?max_binable_length
+  ?sexp_style
   ~(here : [%call_pos])
   (module M : Stable_int63able_without_comparator with type t = a)
   list
@@ -141,6 +148,7 @@ let print_and_check_stable_int63able_type
     ?cr
     ?hide_positions
     ?max_binable_length
+    ?sexp_style
     ~here
     (module M)
     (Some (module M))
@@ -154,6 +162,7 @@ let require_allocation_does_not_exceed_local_private
   ?(cr = CR.CR)
   ?hide_positions
   ?(print_limit = 1_000)
+  ?sexp_style
   allocation_limit
   ~(here : [%call_pos])
   f
@@ -169,6 +178,7 @@ let require_allocation_does_not_exceed_local_private
     ~here
     ~cr
     ?hide_positions
+    ?sexp_style
     (Allocation_limit.is_ok
        allocation_limit
        ~major_words_allocated
@@ -210,6 +220,7 @@ let require_allocation_does_not_exceed_local
   ?cr
   ?print_limit
   ?hide_positions
+  ?sexp_style
   allocation_limit
   ~(here : [%call_pos])
   f
@@ -218,17 +229,25 @@ let require_allocation_does_not_exceed_local
     ?cr
     ?print_limit
     ?hide_positions
+    ?sexp_style
     allocation_limit
     ~here
     f
 ;;
 
-let require_no_allocation_local ?cr ?print_limit ?hide_positions ~(here : [%call_pos]) f
+let require_no_allocation_local
+  ?cr
+  ?print_limit
+  ?hide_positions
+  ?sexp_style
+  ~(here : [%call_pos])
+  f
   = exclave_
   (require_allocation_does_not_exceed_local [@kind k])
     ?cr
     ?print_limit
     ?hide_positions
+    ?sexp_style
     (Minor_words 0)
     ~here
     f
@@ -240,6 +259,7 @@ let require_allocation_does_not_exceed
   ?cr
   ?print_limit
   ?hide_positions
+  ?sexp_style
   limit
   ~(here : [%call_pos])
   f
@@ -249,6 +269,7 @@ let require_allocation_does_not_exceed
       ?cr
       ?print_limit
       ?hide_positions
+      ?sexp_style
       limit
       ~here
       (fun () -> { global = f () })
@@ -256,12 +277,20 @@ let require_allocation_does_not_exceed
   global
 ;;
 
-let require_no_allocation ?cr ?print_limit ?hide_positions ~(here : [%call_pos]) f =
+let require_no_allocation
+  ?cr
+  ?print_limit
+  ?hide_positions
+  ?sexp_style
+  ~(here : [%call_pos])
+  f
+  =
   let { global } =
     (require_no_allocation_local [@kind k])
       ?cr
       ?print_limit
       ?hide_positions
+      ?sexp_style
       ~here
       (fun () -> { global = f () })
   in
@@ -272,17 +301,19 @@ let print_and_check_comparable_sexps
   (type a)
   ?cr
   ?hide_positions
+  ?sexp_style
   ~(here : [%call_pos])
   (module M : With_comparable with type t = a)
   list
   =
   let set = Set.of_list (module M) list in
   let set_sexp = [%sexp (set : M.Set.t)] in
-  print_s [%message "Set" ~_:(set_sexp : Sexp.t)];
+  print_s ?sexp_style [%message "Set" ~_:(set_sexp : Sexp.t)];
   let sorted_list_sexp = [%sexp (List.sort list ~compare:M.compare : M.t list)] in
   require
     ?cr
     ?hide_positions
+    ?sexp_style
     ~here
     (Sexp.equal set_sexp sorted_list_sexp)
     ~if_false_then_print_s:
@@ -294,7 +325,7 @@ let print_and_check_comparable_sexps
   let alist = List.mapi list ~f:(fun i x -> x, i) in
   let map = Map.of_alist_exn (module M) alist in
   let map_sexp = [%sexp (map : int M.Map.t)] in
-  print_s [%message "Map" ~_:(map_sexp : Sexp.t)];
+  print_s ?sexp_style [%message "Map" ~_:(map_sexp : Sexp.t)];
   let sorted_alist_sexp =
     [%sexp
       (List.sort alist ~compare:(fun (x, _) (y, _) -> M.compare x y) : (M.t * int) list)]
@@ -302,6 +333,7 @@ let print_and_check_comparable_sexps
   require
     ?cr
     ?hide_positions
+    ?sexp_style
     ~here
     (Sexp.equal map_sexp sorted_alist_sexp)
     ~if_false_then_print_s:
@@ -316,17 +348,19 @@ let print_and_check_hashable_sexps
   (type a)
   ?cr
   ?hide_positions
+  ?sexp_style
   ~(here : [%call_pos])
   (module M : With_hashable with type t = a)
   list
   =
   let hash_set = Hash_set.of_list (module M) list in
   let hash_set_sexp = [%sexp (hash_set : M.Hash_set.t)] in
-  print_s [%message "Hash_set" ~_:(hash_set_sexp : Sexp.t)];
+  print_s ?sexp_style [%message "Hash_set" ~_:(hash_set_sexp : Sexp.t)];
   let sorted_list_sexp = [%sexp (List.sort list ~compare:M.compare : M.t list)] in
   require
     ?cr
     ?hide_positions
+    ?sexp_style
     ~here
     (Sexp.equal hash_set_sexp sorted_list_sexp)
     ~if_false_then_print_s:
@@ -338,7 +372,7 @@ let print_and_check_hashable_sexps
   let alist = List.mapi list ~f:(fun i x -> x, i) in
   let table = Hashtbl.of_alist_exn (module M) alist in
   let table_sexp = [%sexp (table : int M.Table.t)] in
-  print_s [%message "Table" ~_:(table_sexp : Sexp.t)];
+  print_s ?sexp_style [%message "Table" ~_:(table_sexp : Sexp.t)];
   let sorted_alist_sexp =
     [%sexp
       (List.sort alist ~compare:(fun (x, _) (y, _) -> M.compare x y) : (M.t * int) list)]
@@ -346,6 +380,7 @@ let print_and_check_hashable_sexps
   require
     ?cr
     ?hide_positions
+    ?sexp_style
     ~here
     (Sexp.equal table_sexp sorted_alist_sexp)
     ~if_false_then_print_s:
@@ -360,13 +395,14 @@ let print_and_check_container_sexps
   (type a)
   ?cr
   ?hide_positions
+  ?sexp_style
   ~(here : [%call_pos])
   m
   list
   =
   let (module M : With_containers with type t = a) = m in
-  print_and_check_comparable_sexps ?cr ?hide_positions ~here (module M) list;
-  print_and_check_hashable_sexps ?cr ?hide_positions ~here (module M) list
+  print_and_check_comparable_sexps ?cr ?hide_positions ?sexp_style ~here (module M) list;
+  print_and_check_hashable_sexps ?cr ?hide_positions ?sexp_style ~here (module M) list
 ;;
 
 let remove_time_spans =

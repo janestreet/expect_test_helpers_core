@@ -85,6 +85,7 @@ module type Expect_test_helpers_core = sig
     :  ?cr:CR.t (** default is [CR] *)
     -> ?hide_positions:bool (** default is [false] when [cr=CR], [true] otherwise *)
     -> ?max_binable_length:int (** default is [Int.max_value] *)
+    -> ?sexp_style:Sexp_style.t (** default is [Dynamic.get sexp_style] *)
     -> here:[%call_pos]
     -> (module Stable_without_comparator with type t = 'a)
     -> 'a list
@@ -96,6 +97,7 @@ module type Expect_test_helpers_core = sig
     :  ?cr:CR.t (** default is [CR] *)
     -> ?hide_positions:bool (** default is [false] when [cr=CR], [true] otherwise *)
     -> ?max_binable_length:int (** default is [Int.max_value] *)
+    -> ?sexp_style:Sexp_style.t (** default is [Dynamic.get sexp_style] *)
     -> here:[%call_pos]
     -> (module Stable_int63able_without_comparator with type t = 'a)
     -> 'a list
@@ -109,6 +111,7 @@ module type Expect_test_helpers_core = sig
   val print_and_check_container_sexps
     :  ?cr:CR.t (** default is [CR] *)
     -> ?hide_positions:bool (** default is [false] when [cr=CR], [true] otherwise *)
+    -> ?sexp_style:Sexp_style.t (** default is [Dynamic.get sexp_style] *)
     -> here:[%call_pos]
     -> (module With_containers with type t = 'a)
     -> 'a list
@@ -119,6 +122,7 @@ module type Expect_test_helpers_core = sig
   val print_and_check_comparable_sexps
     :  ?cr:CR.t (** default is [CR] *)
     -> ?hide_positions:bool (** default is [false] when [cr=CR], [true] otherwise *)
+    -> ?sexp_style:Sexp_style.t (** default is [Dynamic.get sexp_style] *)
     -> here:[%call_pos]
     -> (module With_comparable with type t = 'a)
     -> 'a list
@@ -129,6 +133,7 @@ module type Expect_test_helpers_core = sig
   val print_and_check_hashable_sexps
     :  ?cr:CR.t (** default is [CR] *)
     -> ?hide_positions:bool (** default is [false] when [cr=CR], [true] otherwise *)
+    -> ?sexp_style:Sexp_style.t (** default is [Dynamic.get sexp_style] *)
     -> here:[%call_pos]
     -> (module With_hashable with type t = 'a)
     -> 'a list
@@ -177,6 +182,7 @@ module type Expect_test_helpers_core = sig
     ?cr:CR.t
     -> ?print_limit:int (** default is [1_000] *)
     -> ?hide_positions:bool (** default is [false] *)
+    -> ?sexp_style:Sexp_style.t (** default is [Dynamic.get sexp_style] *)
     -> Allocation_limit.t
     -> here:[%call_pos]
     -> (unit -> 'a) @ local once
@@ -188,6 +194,7 @@ module type Expect_test_helpers_core = sig
     ?cr:CR.t
     -> ?print_limit:int (** default is [1_000] *)
     -> ?hide_positions:bool (** default is [false] *)
+    -> ?sexp_style:Sexp_style.t (** default is [Dynamic.get sexp_style] *)
     -> Allocation_limit.t
     -> here:[%call_pos]
     -> (unit -> 'a @ local) @ local once
@@ -202,6 +209,7 @@ module type Expect_test_helpers_core = sig
     ?cr:CR.t
     -> ?print_limit:int
     -> ?hide_positions:bool (** default is [false] *)
+    -> ?sexp_style:Sexp_style.t (** default is [Dynamic.get sexp_style] *)
     -> here:[%call_pos]
     -> (unit -> 'a) @ local once
     -> 'a
@@ -212,6 +220,7 @@ module type Expect_test_helpers_core = sig
     ?cr:CR.t
     -> ?print_limit:int
     -> ?hide_positions:bool (** default is [false] *)
+    -> ?sexp_style:Sexp_style.t (** default is [Dynamic.get sexp_style] *)
     -> here:[%call_pos]
     -> (unit -> 'a @ local) @ local once
     -> 'a @ local]
@@ -227,6 +236,7 @@ module type Expect_test_helpers_core = sig
       :  ?cr:CR.t
       -> ?hide_positions:bool
       -> ?print_limit:int
+      -> ?sexp_style:Sexp_style.t (** default is [Dynamic.get sexp_style] *)
       -> Allocation_limit.t
       -> here:[%call_pos]
       -> (unit -> 'a @ local) @ local once
