@@ -130,9 +130,11 @@ let sexp_to_string ?hide_positions ?sexp_style:sexp_style_option sexp =
       | Some style -> style
       | None -> Dynamic.get sexp_style
     with
-    | To_string_mach -> Sexp.to_string_mach sexp ^ "\n"
-    | To_string_hum -> Sexp.to_string_hum sexp ^ "\n"
-    | Pretty config -> Sexp_pretty.pretty_string config sexp
+    | To_string_mach -> (Sexp.to_string_mach [@alloc stack]) sexp ^ "\n"
+    | To_string_hum -> (Sexp.to_string_hum [@alloc stack]) sexp ^ "\n"
+    | Pretty config ->
+      let sexp = Sexp.globalize sexp in
+      Sexp_pretty.pretty_string config sexp
   in
   maybe_hide_positions_in_string ?hide_positions string
 ;;
@@ -331,6 +333,7 @@ let require
 
 [%%template
 [@@@kind.default k = (value_or_null, float64, bits32, bits64, word)]
+[@@@mode.default m = (local, global)]
 
 let require_equal
   (type a)
@@ -340,7 +343,7 @@ let require_equal
   ?(message = "values are not equal")
   ?sexp_style
   ?(here = Stdlib.Lexing.dummy_pos)
-  (module M : With_equal with type t = a)
+  (module M : With_equal with type t = a[@mode m])
   x
   y
   =
@@ -357,7 +360,7 @@ let require_equal
     ?hide_positions
     ?sexp_style
     ~here
-    (M.equal x y)
+    ((M.equal [@mode m]) x y)
     ~if_false_then_print_s [@nontail]
 ;;
 
@@ -369,7 +372,7 @@ let require_not_equal
   ?(message = "values are equal")
   ?sexp_style
   ?(here = Stdlib.Lexing.dummy_pos)
-  (module M : With_equal with type t = a)
+  (module M : With_equal with type t = a[@mode m])
   x
   y
   =
@@ -378,7 +381,7 @@ let require_not_equal
     ?hide_positions
     ?sexp_style
     ~here
-    (not (M.equal x y))
+    (not ((M.equal [@mode m]) x y))
     ~if_false_then_print_s:
       (lazy
         [%message
@@ -395,11 +398,11 @@ let require_compare_equal
   ?message
   ?sexp_style
   ?(here = Stdlib.Lexing.dummy_pos)
-  (module M : With_compare with type t = a)
+  (module M : With_compare with type t = a[@mode m])
   x
   y
   =
-  (require_equal [@kind k])
+  (require_equal [@kind k] [@mode m])
     ?cr
     ?hide_positions
     ?message
@@ -408,7 +411,7 @@ let require_compare_equal
     (module struct
       include M
 
-      let equal = [%compare.equal: t]
+      let%template[@mode m = (m, global)] equal = ([%compare.equal: t] [@mode.explicit m])
     end)
     x
     y
@@ -421,11 +424,11 @@ let require_compare_not_equal
   ?message
   ?sexp_style
   ?(here = Stdlib.Lexing.dummy_pos)
-  (module M : With_compare with type t = a)
+  (module M : With_compare with type t = a[@mode m])
   x
   y
   =
-  (require_not_equal [@kind k])
+  (require_not_equal [@kind k] [@mode m])
     ?cr
     ?hide_positions
     ?message
@@ -434,7 +437,7 @@ let require_compare_not_equal
     (module struct
       include M
 
-      let equal = [%compare.equal: t]
+      let%template[@mode m = (m, global)] equal = ([%compare.equal: t] [@mode.explicit m])
     end)
     x
     y

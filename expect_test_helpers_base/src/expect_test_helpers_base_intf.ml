@@ -20,16 +20,12 @@ module Sexp_style = struct
   [@@deriving sexp_of ~portable]
 end
 
-module type With_compare = sig
-  type t [@@deriving sexp_of]
-
-  val compare : [%compare: t]
+module type%template [@mode m = (local, global)] With_compare = sig
+  type t [@@deriving (compare [@mode.explicit m]), sexp_of]
 end
 
-module type With_equal = sig
-  type t [@@deriving sexp_of]
-
-  val equal : t -> t -> bool
+module type%template [@mode m = (local, global)] With_equal = sig
+  type t [@@deriving (equal [@mode.explicit m]), sexp_of]
 end
 
 module type With_round_trip = sig
@@ -41,30 +37,31 @@ module type With_round_trip = sig
   val repr_name : string
 end
 
-module type With_sexpable = sig
-  type t [@@deriving equal, sexp]
+module type%template [@mode m = (local, global)] With_sexpable = sig
+  type t [@@deriving (equal [@mode.explicit m]), sexp]
 end
 
-module type With_stringable = sig
-  type t [@@deriving equal]
+module type%template [@mode m = (local, global)] With_stringable = sig
+  type t [@@deriving equal [@mode.explicit m]]
 
   include Stringable.S with type t := t
 end
 
-module type With_quickcheck_and_compare = sig
-  type t [@@deriving compare]
+module type%template [@mode m = (local, global)] With_quickcheck_and_compare = sig
+  type t [@@deriving compare [@mode.explicit m]]
 
   include Base_quickcheck.Test.S with type t := t
 end
 
-module type With_quickcheck_and_equal = sig
-  type t [@@deriving equal]
+module type%template [@mode m = (local, global)] With_quickcheck_and_equal = sig
+  type t [@@deriving equal [@mode.explicit m]]
 
   include Base_quickcheck.Test.S with type t := t
 end
 
-module type With_quickcheck_and_compare_and_equal = sig
-  type t [@@deriving compare, equal]
+module type%template
+  [@mode m = (local, global)] With_quickcheck_and_compare_and_equal = sig
+  type t [@@deriving (compare [@mode.explicit m]), (equal [@mode.explicit m])]
 
   include Base_quickcheck.Test.S with type t := t
 end
@@ -337,6 +334,7 @@ module type Expect_test_helpers_base = sig
 
   [%%template:
   [@@@kind.default k = (value_or_null, float64, bits32, bits64, word)]
+  [@@@mode.default m = (local, global)]
 
   (** [require_equal] compares its two arguments using the equality predicate of the
       provided module. If the comparison fails, prints a message that renders the
@@ -349,20 +347,7 @@ module type Expect_test_helpers_base = sig
     -> ?message:string
     -> ?sexp_style:Sexp_style.t (** default is [Dynamic.get sexp_style] *)
     -> ?here:Stdlib.Lexing.position
-    -> (module With_equal with type t = 'a)
-    -> 'a
-    -> 'a
-    -> unit
-
-  (** Like [require_equal], but derives an equality predicate from a comparison function. *)
-  val require_compare_equal
-    : 'a.
-    ?cr:CR.t (** default is [CR] *)
-    -> ?hide_positions:bool (** default is [false] when [cr=CR], [true] otherwise *)
-    -> ?message:string
-    -> ?sexp_style:Sexp_style.t (** default is [Dynamic.get sexp_style] *)
-    -> ?here:Stdlib.Lexing.position
-    -> (module With_compare with type t = 'a)
+    -> ((module With_equal with type t = 'a)[@mode m])
     -> 'a
     -> 'a
     -> unit
@@ -376,7 +361,20 @@ module type Expect_test_helpers_base = sig
     -> ?message:string
     -> ?sexp_style:Sexp_style.t (** default is [Dynamic.get sexp_style] *)
     -> ?here:Stdlib.Lexing.position
-    -> (module With_equal with type t = 'a)
+    -> ((module With_equal with type t = 'a)[@mode m])
+    -> 'a
+    -> 'a
+    -> unit
+
+  (** Like [require_equal], but derives an equality predicate from a comparison function. *)
+  val require_compare_equal
+    : 'a.
+    ?cr:CR.t (** default is [CR] *)
+    -> ?hide_positions:bool (** default is [false] when [cr=CR], [true] otherwise *)
+    -> ?message:string
+    -> ?sexp_style:Sexp_style.t (** default is [Dynamic.get sexp_style] *)
+    -> ?here:Stdlib.Lexing.position
+    -> ((module With_compare with type t = 'a)[@mode m])
     -> 'a
     -> 'a
     -> unit
@@ -390,7 +388,7 @@ module type Expect_test_helpers_base = sig
     -> ?message:string
     -> ?sexp_style:Sexp_style.t (** default is [Dynamic.get sexp_style] *)
     -> ?here:Stdlib.Lexing.position
-    -> (module With_compare with type t = 'a)
+    -> ((module With_compare with type t = 'a)[@mode m])
     -> 'a
     -> 'a
     -> unit]
@@ -441,13 +439,14 @@ module type Expect_test_helpers_base = sig
   (** [require_does_raise] is like [show_raise], but additionally prints a CR if the
       function does not raise. *)
   val require_does_raise
-    :  ?cr:CR.t (** default is [CR] *)
+    : 'a.
+    ?cr:CR.t (** default is [CR] *)
     -> ?hide_positions:bool (** default is [false] *)
     -> ?sanitize:(Sexp.t -> Sexp.t) (** default is Fn.id *)
     -> ?sexp_style:Sexp_style.t (** default is to use [Dynamic.get sexp_style] *)
     -> ?show_backtrace:bool (** default is [false] *)
     -> ?here:Stdlib.Lexing.position
-    -> (unit -> _)
+    -> (unit -> 'a)
     -> unit
 
   (** [require_some option] is like [require (is_some option)], with improved output. If

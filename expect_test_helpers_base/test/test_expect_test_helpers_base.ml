@@ -1183,7 +1183,7 @@ let%expect_test ("test_compare" [@tags "64-bits-only"]) =
   test_compare
     ~cr:Comment
     (module struct
-      type t = int [@@deriving compare, quickcheck, sexp_of]
+      type t = int [@@deriving compare ~localize, quickcheck, sexp_of]
     end);
   [%expect {| |}];
   (* failure *)
@@ -1240,7 +1240,7 @@ let%expect_test ("test_equal" [@tags "64-bits-only"]) =
   test_equal
     ~cr:Comment
     (module struct
-      type t = int [@@deriving equal, quickcheck, sexp_of]
+      type t = int [@@deriving equal ~localize, quickcheck, sexp_of]
     end);
   [%expect {| |}];
   (* failure *)
@@ -1291,7 +1291,7 @@ let%expect_test ("test_compare_and_equal" [@tags "64-bits-only"]) =
   test_compare_and_equal
     ~cr:Comment
     (module struct
-      type t = int [@@deriving compare, equal, quickcheck, sexp_of]
+      type t = int [@@deriving compare ~localize, equal ~localize, quickcheck, sexp_of]
     end);
   [%expect {| |}];
   (* failure *)
