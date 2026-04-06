@@ -3,4 +3,4 @@
  (public_name expect_test_helpers_core.expect_test_helpers_base)
  (libraries base base_quickcheck portable re sexp_pretty stdio)
  (preprocess
-  (pps ppx_jane)))
+  (pps ppx_jane -compare-require-explicit-locality)))

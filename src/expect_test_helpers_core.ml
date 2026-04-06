@@ -9,11 +9,13 @@ module Allocation_limit = struct
     match t with
     | Major_words n -> major_words_allocated <= n
     | Minor_words n -> major_words_allocated = 0 && minor_words_allocated <= n
+    | Total_words n -> major_words_allocated + minor_words_allocated <= n
   ;;
 
   let show_major_words = function
     | Major_words _ -> true
     | Minor_words _ -> false
+    | Total_words _ -> true
   ;;
 end
 

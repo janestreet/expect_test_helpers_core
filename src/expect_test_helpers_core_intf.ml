@@ -4,6 +4,7 @@ module Allocation_limit = struct
   type t =
     | Major_words of int
     | Minor_words of int
+    | Total_words of int
   [@@deriving sexp_of]
 end
 
