@@ -12,20 +12,20 @@ build: [
 ]
 depends: [
   "ocaml" {>= "5.1.0"}
-  "base"
-  "base_quickcheck"
   "core"
-  "portable"
+  "expect_test_helpers_base"
   "ppx_jane"
   "sexp_pretty"
-  "stdio"
-  "dune"            {>= "3.17.0"}
-  "re"              {= "1.14.0+ox"}
+  "dune"                     {>= "3.17.0"}
+  "re"                       {= "1.14.0+ox"}
 ]
-available: arch != "arm32" & arch != "x86_32"
+available: arch != "x86_32"
 synopsis: "Helpers for writing expectation tests"
 description: "
 This library provides helper functions for writing expect tests.
+
+If you want a lighterweight library that provides similar functionality, look
+at expect_test_helpers_base.
 
 If you want helpers for writing expect tests using the Async library,
 look at expect_test_helpers_async.
