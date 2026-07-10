@@ -8,7 +8,7 @@ let () = print_and_check_stable_type ()
   {|
 Line _, characters _-_:
 Error: This expression should not be a unit literal, the expected type is
-       (module Core.Stable_without_comparator with type t = 'a)
+       (module Expect_test_helpers_core.Stable_type with type t = 'a)
 |}]
 
 let () = print_and_check_stable_int63able_type ()
@@ -17,7 +17,7 @@ let () = print_and_check_stable_int63able_type ()
   {|
 Line _, characters _-_:
 Error: This expression should not be a unit literal, the expected type is
-       (module Core.Stable_int63able_without_comparator with type t = 'a)
+       (module Expect_test_helpers_core.Stable_int63able_type with type t = 'a)
 |}]
 
 let () = print_and_check_container_sexps ()

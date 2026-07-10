@@ -1,28 +1,68 @@
 open! Core
 
-module Allocation_limit = struct
-  type t =
-    | Major_words of int
-    | Minor_words of int
-    | Total_words of int
-  [@@deriving sexp_of]
-end
-
-module type With_comparable = sig
-  type t [@@deriving compare, sexp_of]
-  type key := t
-
-  include Comparator.S with type t := t
-
-  (* [Set] and [Map] submodules are here because we specifically want to test whether they
-     have been constructed correctly, as opposed to testing the functor that creates them. *)
-
-  module Set : sig
-    type t = (key, comparator_witness) Set.t [@@deriving sexp_of]
+module Definitions = struct
+  module Allocation_limit = struct
+    type t =
+      | Major_words of int
+      | Minor_words of int
+      | Total_words of int
+    [@@deriving sexp_of]
   end
 
-  module Map : sig
-    type 'a t = (key, 'a, comparator_witness) Map.t [@@deriving sexp_of]
+  module type%template [@mode m = (local, global)] Stable_type = sig
+    type t [@@deriving bin_io, (compare [@mode.explicit m]), sexp]
+  end
+
+  module type%template [@mode m = (local, global)] Stable_int63able_type = sig
+    type t
+
+    include Stable_type [@mode m] with type t := t
+
+    val to_int63 : t -> Int63.t
+    val of_int63_exn : Int63.t -> t
+  end
+
+  module type%template [@mode m = (local, global)] With_comparable = sig
+    type t [@@deriving (compare [@mode.explicit m]), sexp_of]
+    type key := t
+
+    include Comparator.S with type t := t
+
+    (* [Set] and [Map] submodules are here because we specifically want to test whether
+       they have been constructed correctly, as opposed to testing the functor that
+       creates them. *)
+
+    module Set : sig
+      type t = (key, comparator_witness) Set.t [@@deriving sexp_of]
+    end
+
+    module Map : sig
+      type 'a t = (key, 'a, comparator_witness) Map.t [@@deriving sexp_of]
+    end
+  end
+
+  module type%template [@mode m = (local, global)] With_hashable = sig
+    type t [@@deriving (compare [@mode.explicit m]), hash, sexp_of]
+    type key := t
+
+    (* [Hash_set] and [Table] submodules are here because we specifically want to test
+       whether they have been constructed correctly, as opposed to testing the functor
+       that creates them. *)
+
+    module Hash_set : sig
+      type t = key Hash_set.t [@@deriving sexp_of]
+    end
+
+    module Table : sig
+      type 'a t = (key, 'a) Hashtbl.t [@@deriving sexp_of]
+    end
+  end
+
+  module type With_containers = sig
+    type t
+
+    include With_comparable with type t := t
+    include With_hashable with type t := t
   end
 end
 
@@ -30,39 +70,15 @@ module Comparable_satisfies_with_comparable (M : sig
     type t [@@deriving sexp_of]
 
     include Comparable.S with type t := t
-  end) : With_comparable =
+  end) : Definitions.With_comparable =
   M
-
-module type With_hashable = sig
-  type t [@@deriving compare, hash, sexp_of]
-  type key := t
-
-  (* [Hash_set] and [Table] submodules are here because we specifically want to test
-     whether they have been constructed correctly, as opposed to testing the functor that
-     creates them. *)
-
-  module Hash_set : sig
-    type t = key Hash_set.t [@@deriving sexp_of]
-  end
-
-  module Table : sig
-    type 'a t = (key, 'a) Hashtbl.t [@@deriving sexp_of]
-  end
-end
 
 module Hashable_satisfies_with_hashable (M : sig
     type t [@@deriving sexp_of]
 
     include Hashable.S with type t := t
-  end) : With_hashable =
+  end) : Definitions.With_hashable =
   M
-
-module type With_containers = sig
-  type t
-
-  include With_comparable with type t := t
-  include With_hashable with type t := t
-end
 
 module type Expect_test_helpers_core = sig
   (** Helpers for producing output inside [let%expect_test]. Designed for code using
@@ -72,9 +88,9 @@ module type Expect_test_helpers_core = sig
     include Expect_test_helpers_base
   end
 
-  module type With_containers = With_containers
-  module type With_comparable = With_comparable
-  module type With_hashable = With_hashable
+  include module type of struct
+    include Definitions
+  end
 
   (** {3 Serialization tests} *)
 
@@ -82,27 +98,31 @@ module type Expect_test_helpers_core = sig
       bin-io and sexp serializations of the given values. Prints an error message for any
       serializations that fail to round-trip, and for any bin-io serializations that
       exceed [max_binable_length]. *)
-  val print_and_check_stable_type
-    :  ?cr:CR.t (** default is [CR] *)
+  val%template print_and_check_stable_type
+    : 'a.
+    ?cr:CR.t (** default is [CR] *)
     -> ?hide_positions:bool (** default is [false] when [cr=CR], [true] otherwise *)
     -> ?max_binable_length:int (** default is [Int.max_value] *)
     -> ?sexp_style:Sexp_style.t (** default is [Dynamic.get sexp_style] *)
     -> ?here:Stdlib.Lexing.position
-    -> (module Stable_without_comparator with type t = 'a)
+    -> ((module Stable_type with type t = 'a)[@mode m])
     -> 'a list
     -> unit
+  [@@mode m = (local, global)]
 
   (** [print_and_check_stable_int63able_type] works like [print_and_check_stable_type],
       and includes [Int63.t] serializations. *)
-  val print_and_check_stable_int63able_type
-    :  ?cr:CR.t (** default is [CR] *)
+  val%template print_and_check_stable_int63able_type
+    : 'a.
+    ?cr:CR.t (** default is [CR] *)
     -> ?hide_positions:bool (** default is [false] when [cr=CR], [true] otherwise *)
     -> ?max_binable_length:int (** default is [Int.max_value] *)
     -> ?sexp_style:Sexp_style.t (** default is [Dynamic.get sexp_style] *)
     -> ?here:Stdlib.Lexing.position
-    -> (module Stable_int63able_without_comparator with type t = 'a)
+    -> ((module Stable_int63able_type with type t = 'a)[@mode m])
     -> 'a list
     -> unit
+  [@@mode m = (local, global)]
 
   (** [print_and_check_container_sexps] prints the sexp representation of maps, sets, hash
       tables, and hash sets based on the given values. For sets and hash sets, prints a CR

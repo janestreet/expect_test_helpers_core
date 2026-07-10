@@ -1,6 +1,6 @@
 open! Core
 include Expect_test_helpers_base
-include Expect_test_helpers_core_intf
+include Expect_test_helpers_core_intf.Definitions
 
 module Allocation_limit = struct
   include Allocation_limit
@@ -26,21 +26,24 @@ module type Int63able = sig
   val of_int63_exn : Int63.t -> t
 end
 
-let print_and_check_stable_internal
+[%%template
+[@@@mode m = (local, global)]
+
+let[@mode m] print_and_check_stable_internal
   (type a)
   ?cr
   ?hide_positions
   ?max_binable_length
   ?sexp_style
   ?(here = Stdlib.Lexing.dummy_pos)
-  (module M : Stable_without_comparator with type t = a)
+  (module M : Stable_type with type t = a[@mode m])
   (int63able : (module Int63able with type t = a) option)
   list
   =
   let module M = struct
     include M
 
-    let equal = [%compare.equal: t]
+    let%template[@mode m = (m, global)] equal = ([%compare.equal: t] [@mode.explicit m])
   end
   in
   print_s
@@ -105,7 +108,7 @@ let print_and_check_stable_internal
     end : With_round_trip
       with type t = a)
   in
-  print_and_check_round_trip
+  (print_and_check_round_trip [@mode m])
     ?cr
     ?hide_positions
     ?sexp_style
@@ -115,17 +118,17 @@ let print_and_check_stable_internal
     list
 ;;
 
-let print_and_check_stable_type
+let[@mode m] print_and_check_stable_type
   (type a)
   ?cr
   ?hide_positions
   ?max_binable_length
   ?sexp_style
   ?(here = Stdlib.Lexing.dummy_pos)
-  (module M : Stable_without_comparator with type t = a)
+  (module M : Stable_type with type t = a[@mode m])
   list
   =
-  print_and_check_stable_internal
+  (print_and_check_stable_internal [@mode m])
     ?cr
     ?hide_positions
     ?max_binable_length
@@ -136,17 +139,17 @@ let print_and_check_stable_type
     list
 ;;
 
-let print_and_check_stable_int63able_type
+let[@mode m] print_and_check_stable_int63able_type
   (type a)
   ?cr
   ?hide_positions
   ?max_binable_length
   ?sexp_style
   ?(here = Stdlib.Lexing.dummy_pos)
-  (module M : Stable_int63able_without_comparator with type t = a)
+  (module M : Stable_int63able_type with type t = a[@mode m])
   list
   =
-  print_and_check_stable_internal
+  (print_and_check_stable_internal [@mode m])
     ?cr
     ?hide_positions
     ?max_binable_length
@@ -155,7 +158,7 @@ let print_and_check_stable_int63able_type
     (module M)
     (Some (module M))
     list
-;;
+;;]
 
 [%%template
 [@@@kind.default k = (value_or_null, float64, bits32, bits64, word)]
